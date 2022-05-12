@@ -1,7 +1,9 @@
 package me.leon
 
 import androidx.collection.*
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.test.Test
+import org.openjdk.jol.info.ClassLayout
 import org.openjdk.jol.info.GraphLayout
 
 class Collections {
@@ -70,6 +72,7 @@ class Collections {
             println("linkedSetOf :\n ${GraphLayout.parseInstance(it).toFootprint()}")
         }
     }
+
     @Test
     fun listMemory() {
         arrayMapOf(1 to POJO(), 2 to POJO(), 3 to POJO(), 4 to POJO()).also {
@@ -93,5 +96,74 @@ class Collections {
         mutableListOf(POJO(), POJO(), POJO(), POJO()).also {
             println("mutableListOf :\n ${GraphLayout.parseInstance(it).toFootprint()}")
         }
+        // 1个空间节省 4 个字节
+        ArrayList<POJO>()
+            .apply {
+                add(POJO("a"))
+                add(POJO("b"))
+                add(POJO("c"))
+                add(POJO("d"))
+            }
+            .also {
+                println("ArrayList :\n ${GraphLayout.parseInstance(it).toPrintable()}")
+                println("ArrayList :\n ${GraphLayout.parseInstance(it).totalSize()}")
+            }
+
+        mutableListOf(POJO(), POJO(), POJO(), POJO()).also {
+            println("mutableListOf :\n ${GraphLayout.parseInstance(it).toFootprint()}")
+        }
+    }
+
+    @Test
+    fun mapMemory() {
+        // 1个空间节省 4 个字节
+        HashMap<String, String>(4)
+            .apply {
+                put("111", "11")
+                put("22", "22")
+                put("33", "333")
+                //            put("44", "333")
+            }
+            .also {
+                println(GraphLayout.parseInstance(it).toPrintable())
+                println(GraphLayout.parseInstance(it).totalSize())
+            }
+
+        // 1个空间节省 4个字节
+        ConcurrentHashMap<String, String>()
+            .apply {
+                put("111", "11")
+                put("22", "22")
+                put("33", "333")
+            }
+            .also {
+                println(GraphLayout.parseInstance(it).toPrintable())
+                println(GraphLayout.parseInstance(it).totalSize())
+            }
+    }
+
+    @Test
+    fun typeMemory() {
+        println(GraphLayout.parseInstance(mapOf<String, Any>()).toFootprint())
+        println(GraphLayout.parseInstance(mutableMapOf<String, Any>()).toFootprint())
+        val stringList =
+            mutableListOf("330108000001", "330108000002", "330108000003", "330108000004")
+        val longList = mutableListOf(330108000001L, 330108000002L, 330108000003L, 330108000004L)
+        println(
+            GraphLayout.parseInstance(stringList).also { println(it.totalSize()) }.toPrintable()
+        )
+        println(GraphLayout.parseInstance(longList).also { println(it.totalSize()) }.toPrintable())
+        println(GraphLayout.parseInstance("330108000001".toLong()).toFootprint())
+        println(
+            GraphLayout.parseInstance("330108000001").also { println(it.totalSize()) }.toFootprint()
+        )
+        println(ClassLayout.parseInstance("330108000001").toPrintable())
+        println(
+            GraphLayout.parseInstance(byteArrayOf(1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6))
+                .also { println(it.totalSize()) }
+                .toFootprint()
+        )
+        //        println(GraphLayout.parseInstance(POJO()).also { println(it.totalSize())
+        // }.toFootprint())
     }
 }

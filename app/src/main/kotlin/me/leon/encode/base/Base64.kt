@@ -25,9 +25,9 @@ fun ByteArray.base64(dict: String = BASE64_DICT, needPadding: Boolean = true) =
         }
 
 fun String.base64Decode(dict: String = BASE64_DICT) =
-    stripAllSpace()
+    stripAllSpace() // remove all space  RFC 2045定义，每行为76个字符，行末加入\r\n
         .toCharArray()
-        .filter { it != '=' }
+        .filter { dict.contains(".") || !dict.contains(".") && it != '=' && it != '.' }
         .joinToString("") {
             dict
                 .ifEmpty { BASE64_DICT }
@@ -45,7 +45,8 @@ fun String.base64Decode2String(dict: String = BASE64_DICT) = String(base64Decode
 /** 标准的Base64并不适合直接放在URL里传输，因为URL编码器会把标准Base64中的“/”和“+”字符变为形如“%XX”的形式， */
 fun String.base64Url(dict: String = BASE64_URL_DICT) = toByteArray().base64Url(dict)
 
-fun ByteArray.base64Url(dict: String = BASE64_URL_DICT) = base64(dict.ifEmpty { BASE64_URL_DICT },false)
+fun ByteArray.base64Url(dict: String = BASE64_URL_DICT) =
+    base64(dict.ifEmpty { BASE64_URL_DICT }, false)
 
 fun String.base64UrlDecode(dict: String = BASE64_URL_DICT) =
     base64Decode(dict.ifEmpty { BASE64_URL_DICT })

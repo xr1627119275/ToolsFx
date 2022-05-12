@@ -1,4 +1,4 @@
-<div align=center><img  src="https://gitee.com/LeonShih/Image/raw/master/tb.png"/></div>
+<div align=center><img  src="art/tb.png"/></div>
 
 <h1 align="center">ToolsFx</h1>
 <p align="center">
@@ -7,6 +7,7 @@
 <a href="changelog.md"><img src="https://img.shields.io/badge/updates-%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97-brightgreen"/></a>
 <img src="https://img.shields.io/badge/license-ISC-green"/>
 <img src="https://img.shields.io/github/downloads/Leon406/Toolsfx/total"/>
+<a href="https://gitter.im/ToolsFx/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge"><img src="https://badges.gitter.im/ToolsFx/community.svg"/></a>
 </p>
 <p align="center">
 <a href="README.md">English</a>|<a href="README-zh.md">中文</a>
@@ -57,7 +58,7 @@ support file, big file which is larger than 8Gi
 
 - [x] md serial
 - [x] sha1
-- [x] sha2serial
+- [x] sha2 
 - [x] sha3
 - [x] SM3
 - [x] RIPEMD
@@ -73,7 +74,7 @@ support file, big file which is larger than 8Gi
 
 - [x] md serial
 - [x] sha1
-- [x] sha2serial
+- [x] sha2
 - [x] sha3
 - [x] SM3
 - [x] RIPEMD
@@ -163,6 +164,7 @@ support file, big file which is larger than 8Gi
 - [x] Grain v1
 - [x] Grain128
 - [x] Zuc128
+- [x] etc.
 
 ### Asymmetric Crypto RSA
 

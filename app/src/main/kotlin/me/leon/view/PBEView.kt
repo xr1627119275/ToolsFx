@@ -5,6 +5,7 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.control.*
 import me.leon.CHARSETS
+import me.leon.Styles
 import me.leon.controller.PBEController
 import me.leon.encode.base.base64Decode
 import me.leon.ext.*
@@ -38,7 +39,11 @@ class PBEView : Fragment("PBE") {
     private var timeConsumption = 0L
     private var startTime = 0L
     private val info
-        get() = "PBE Cipher: $cipher   charset: ${selectedCharset.get()} cost: $timeConsumption ms"
+        get() =
+            "PBE Cipher: $cipher   charset: ${selectedCharset.get()} " +
+                "${messages["inputLength"]}: ${inputText.length}  " +
+                "${messages["outputLength"]}: ${outputText.length}  " +
+                "cost: $timeConsumption ms"
     private lateinit var infoLabel: Label
 
     private var saltEncode = "hex"
@@ -76,7 +81,7 @@ class PBEView : Fragment("PBE") {
     private val selectedCharset = SimpleStringProperty(CHARSETS.first())
 
     private val centerNode = vbox {
-        addClass("group")
+        addClass(Styles.group)
         hbox {
             label(messages["input"])
             button(graphic = imageview("/img/import.png")) {
@@ -90,7 +95,7 @@ class PBEView : Fragment("PBE") {
                 onDragEntered = eventHandler
             }
         hbox {
-            addClass("left")
+            addClass(Styles.left)
             label(messages["alg"])
             combobox(selectedAlg, algs) { cellFormat { text = it } }
 
@@ -98,23 +103,34 @@ class PBEView : Fragment("PBE") {
             combobox(selectedCharset, CHARSETS) { cellFormat { text = it } }
         }
         hbox {
-            addClass("left")
-            label("密码:")
+            addClass(Styles.left)
+            label(messages["pwd"])
             tfPwd = textfield { promptText = messages["pwdHintNull"] }
 
-            label("key长度(位):")
-            tfKeyLength = textfield("128") { prefWidth = DEFAULT_SPACING_8X }
-            label("salt长度:")
-            tfSaltLength = textfield("8") { prefWidth = DEFAULT_SPACING_8X }
+            label(messages["keyLen"])
+            tfKeyLength =
+                textfield("128") {
+                    prefWidth = DEFAULT_SPACING_8X
+                    textFormatter = intTextFormatter
+                }
+            label(messages["saltLen"])
+            tfSaltLength =
+                textfield("8") {
+                    prefWidth = DEFAULT_SPACING_8X
+                    textFormatter = intTextFormatter
+                }
             label("iteration:")
-            tfIteration = textfield("1") { prefWidth = DEFAULT_SPACING_8X }
+            tfIteration =
+                textfield("1") {
+                    prefWidth = DEFAULT_SPACING_8X
+                    textFormatter = intTextFormatter
+                }
             label("salt:")
             tfSalt = textfield { promptText = "optional,可空" }
             vbox {
+                addClass(Styles.group)
                 tgGroup =
                     togglegroup {
-                        spacing = DEFAULT_SPACING
-                        paddingAll = DEFAULT_SPACING
                         radiobutton("hex") { isSelected = true }
                         radiobutton("base64")
                         radiobutton("raw")
@@ -125,7 +141,7 @@ class PBEView : Fragment("PBE") {
             }
         }
         hbox {
-            addClass("left")
+            addClass(Styles.center)
             togglegroup {
                 spacing = DEFAULT_SPACING
                 alignment = Pos.BASELINE_CENTER

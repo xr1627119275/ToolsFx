@@ -1,4 +1,4 @@
-<div align=center><img  src="https://gitee.com/LeonShih/Image/raw/master/tb.png"/></div>
+<div align=center><img  src="art/tb.png"/></div>
 
 <h1 align="center">ToolsFx</h1>
 <p align="center">
@@ -7,6 +7,7 @@
 <a href="changelog.md"><img src="https://img.shields.io/badge/updates-%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97-brightgreen"/></a>
 <img src="https://img.shields.io/badge/license-ISC-green"/>
 <img src="https://img.shields.io/github/downloads/Leon406/Toolsfx/total"/>
+<a href="https://gitter.im/ToolsFx/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge"><img src="https://badges.gitter.im/ToolsFx/community.svg"/></a>
 </p>
 <p align="center">
 <a href="README.md">English</a>|<a href="README-zh.md">中文</a>
@@ -162,7 +163,7 @@
 ![sym](./art/sym.gif)
 
 ### 流式对称加密 (stream cipher)
-- [x] RC4
+- [x] RC4 (aka. ARC4)
 - [x] HC128/HC256
 - [x] ChaCha/ChaCha20/ChaCha20-Poly1305
 - [x] Salsa20
@@ -171,6 +172,7 @@
 - [x] Grainv1
 - [x] Grain128
 - [x] Zuc128
+- [x] 其他 BouncyCastle支持的算法
 
 ### 非对称加密 RSA
 
@@ -194,7 +196,7 @@
 - [x] EC
 - [x] EdDSA(ED448/ED25192)
 - [x] SM2
-- [ ] 其他
+- [x] 其他 BouncyCastle支持的算法
 
 ### 古典密码 (for CTF)
 

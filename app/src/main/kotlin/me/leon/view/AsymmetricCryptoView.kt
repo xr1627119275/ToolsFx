@@ -2,6 +2,7 @@ package me.leon.view
 
 import javafx.beans.property.*
 import javafx.scene.control.*
+import me.leon.Styles
 import me.leon.controller.AsymmetricCryptoController
 import me.leon.encode.base.base64
 import me.leon.ext.*
@@ -15,6 +16,10 @@ class AsymmetricCryptoView : Fragment(FX.messages["asymmetric"]) {
     private val isSingleLine = SimpleBooleanProperty(false)
     private val privateKeyEncrypt = SimpleBooleanProperty(false)
     private val isProcessing = SimpleBooleanProperty(false)
+    private val isEnablePadding = SimpleBooleanProperty(true)
+    private val isShowDerivedKey = SimpleBooleanProperty(true)
+
+    private var cbBits: ComboBox<Number> by singleAssign()
     lateinit var taInput: TextArea
     lateinit var taKey: TextArea
     lateinit var taOutput: TextArea
@@ -32,30 +37,35 @@ class AsymmetricCryptoView : Fragment(FX.messages["asymmetric"]) {
     private var startTime = 0L
     private val info
         get() =
-            "RSA  bits: ${selectedBits.get()}  mode: ${
+            "${selectedAlg.get()}  bits: ${selectedBits.get()}  mode: ${
                 if (privateKeyEncrypt.get()) "private key encrypt"
                 else "public key encrypt"
-            } cost: ${timeConsumption} ms"
+            }  " +
+                "${messages["inputLength"]}: ${inputText.length}  " +
+                "${messages["outputLength"]}: ${outputText.length}  " +
+                "cost: $timeConsumption ms"
+    private val selectedPadding = SimpleStringProperty(RSA_PADDINGS.first())
     private lateinit var labelInfo: Label
     private var keyText: String
-        get() =
-            taKey.text.takeIf { it.contains("-----BEGIN CERTIFICATE") }
-                ?: taKey
-                    .text
-                    .replace("---+(?:END|BEGIN) (?:RSA )?\\w+ KEY---+|\n|\r|\r\n".toRegex(), "")
-                    .trim()
+        get() = taKey.text.trim()
         set(value) {
             taKey.text = value
         }
 
-    private var alg = "RSA"
+    private val alg
+        get() =
+            with(selectedAlg.get()) {
+                if (this == "RSA") "$this/NONE/${selectedPadding.get()}" else this
+            }
     private var isEncrypt = true
     private var inputEncode = "raw"
     private var outputEncode = "base64"
     private lateinit var tgInput: ToggleGroup
     private lateinit var tgOutput: ToggleGroup
-    private val bitsLists = mutableListOf(512, 1024, 2048, 3072, 4096)
-    private val selectedBits = SimpleIntegerProperty(1024)
+
+    private val algos = ASYMMETRIC_ALGOS.keys.toMutableList()
+    private val selectedAlg = SimpleStringProperty(algos.first())
+    private val selectedBits = SimpleIntegerProperty(ASYMMETRIC_ALGOS[selectedAlg.get()]!!.first())
     private val isPrivateKey
         get() = isEncrypt && privateKeyEncrypt.get() || !isEncrypt && !privateKeyEncrypt.get()
 
@@ -103,7 +113,7 @@ class AsymmetricCryptoView : Fragment(FX.messages["asymmetric"]) {
         spacing = DEFAULT_SPACING
 
         hbox {
-            addClass("left")
+            addClass(Styles.left)
             label(messages["input"]) { tooltip("加密时为明文,解密时为base64编码的密文") }
             tgInput =
                 togglegroup {
@@ -143,9 +153,31 @@ class AsymmetricCryptoView : Fragment(FX.messages["asymmetric"]) {
             }
 
         hbox {
-            addClass("left")
+            addClass(Styles.left)
+            label(messages["alg"])
+            combobox(selectedAlg, algos) { cellFormat { text = it.toString() } }
+            selectedAlg.addListener { _, _, newValue ->
+                newValue?.run {
+                    cbBits.items = ASYMMETRIC_ALGOS[newValue]!!.asObservable()
+                    selectedBits.set(ASYMMETRIC_ALGOS[newValue]!!.first())
+                    cbBits.isDisable = ASYMMETRIC_ALGOS[newValue]!!.size == 1
+                    isEnablePadding.value = newValue == "RSA"
+                    isShowDerivedKey.value = newValue == "RSA"
+                }
+            }
             label(messages["bits"])
-            combobox(selectedBits, bitsLists) { cellFormat { text = it.toString() } }
+            cbBits =
+                combobox(selectedBits, ASYMMETRIC_ALGOS[selectedAlg.get()]) {
+                    cellFormat { text = it.toString() }
+                }
+            label("padding:")
+            combobox(selectedPadding, RSA_PADDINGS) {
+                enableWhen(isEnablePadding)
+                cellFormat { text = it }
+            }
+        }
+        hbox {
+            addClass(Styles.center)
             togglegroup {
                 spacing = DEFAULT_SPACING
                 radiobutton(messages["encrypt"]) { isSelected = true }
@@ -166,7 +198,7 @@ class AsymmetricCryptoView : Fragment(FX.messages["asymmetric"]) {
                 enableWhen(!isProcessing)
                 action {
                     isProcessing.value = true
-                    runAsync { genKeys(alg, selectedBits.value.toInt()) } ui
+                    runAsync { genBase64KeyArray(alg, listOf(selectedBits.value.toInt())) } ui
                         {
                             isProcessing.value = false
                             if (isPrivateKey) {
@@ -180,6 +212,7 @@ class AsymmetricCryptoView : Fragment(FX.messages["asymmetric"]) {
                 }
             }
             button(messages["deriveKey"]) {
+                visibleWhen(isShowDerivedKey)
                 enableWhen(!isProcessing)
                 action {
                     isProcessing.value = true
@@ -192,7 +225,7 @@ class AsymmetricCryptoView : Fragment(FX.messages["asymmetric"]) {
             }
         }
         hbox {
-            addClass("left")
+            addClass(Styles.left)
             label(messages["output"])
             tgOutput =
                 togglegroup {

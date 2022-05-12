@@ -1,4 +1,4 @@
-<img width=0 height=0 src="https://profile-counter.glitch.me/Leon406/count.svg" alt="Leon406:: Visitor's Count" />
+ <img width=0 height=0 src="https://profile-counter.glitch.me/Leon406/count.svg" alt="Leon406:: Visitor's Count" />
 <img width=0 height=0 src="https://profile-counter.glitch.me/Leon406_ToolsFx/count.svg" alt="ToolsFx:: Visitor's Count" />
 
 # v1.5.0  
@@ -188,3 +188,37 @@
 - fix(app): RSA拖入密钥事件重复响应
 - fix(app): 乱码还原失败
 - fix(plugin-apipost): 浏览器curl解析未删除转义字符
+
+# v1.13.0  
+## feature:  
+- feat(app): add radix8, radix10, radix32
+- feat(app): 内嵌浏览器支持系统浏览器打开,美化UI
+- feat(app): 新增hash字典爆破,可配置多个字典
+- feat(app): 编码支持一键爆破/hash支持base64编码
+- feat(app): TextField限制数字输入
+- feat(app): add ECC calculator
+- feat(app): signature support output hex signed data
+- feat(app): 提示信息新增输入输出长度显示
+- feat(app): support input AEAD associated data
+- feat(app): 签名支持hex密钥,RSA签名额外支持n e d参数
+- feat: RSA密钥支持hex/base64/n e d参数自动识别
+- feat: SM2非对称加密结果模式改为国标C1C3C2,支持密钥Q,D加解密
+- feat(app): RSA支持padding选择,新增Skein-256-128
+- feat(app): 非对称加密算法位数选择
+- feat: morse支持自定义符号
+- feat: 新增SM2,ElGamal
+- feat(app): 对称加密新增VMPC-KSA3/Shacal2/GOST28147/GOST3412-2015/Noekeon
+- feat(app): 新增bc 1.71 hash/mac算法
+- feat(app): 字符处理新增缩进功能
+- feat(app): 对称加密模块新增异或加密,ctf模块新增 ascii sum
+- feat(app): 优化rail fence W算法,支持偏移
+- feat(app): #39 解析bc已支持x509相关证书
+- feat(app): 大数模块,增强参数可读性及新增指定长度随机素数
+## bug fix:  
+- fix(app): pcMoe x-token过期
+- fix(app): radix64 decode issue
+- fix(app): radix多余leading zero
+- fix(plugin-apipost): query parameter parse error
+- fix(app): 大数开根精度丢失
+- fix(app): 正式版升级提示
+- fix(app): base64Url编码包含=

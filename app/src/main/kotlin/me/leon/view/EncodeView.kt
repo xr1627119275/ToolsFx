@@ -4,8 +4,7 @@ import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.control.*
-import me.leon.CHARSETS
-import me.leon.SimpleMsgEvent
+import me.leon.*
 import me.leon.controller.EncodeController
 import me.leon.encode.base.base64
 import me.leon.ext.*
@@ -20,7 +19,7 @@ class EncodeView : Fragment(messages["encodeAndDecode"]) {
     private val isSingleLine = SimpleBooleanProperty(false)
     private val decodeIgnoreSpace = SimpleBooleanProperty(true)
     private val isProcessing = SimpleBooleanProperty(false)
-    private lateinit var taInput: TextArea
+    private var taInput: TextArea by singleAssign()
     private lateinit var taOutput: TextArea
     private lateinit var labelInfo: Label
     private lateinit var tfCustomDict: TextField
@@ -71,7 +70,7 @@ class EncodeView : Fragment(messages["encodeAndDecode"]) {
         )
 
     private val centerNode = vbox {
-        addClass("group")
+        addClass(Styles.group)
         hbox {
             label(messages["input"])
             spacing = DEFAULT_SPACING
@@ -114,7 +113,7 @@ class EncodeView : Fragment(messages["encodeAndDecode"]) {
                 textProperty().addListener { _, _, _ -> labelInfo.text = info }
             }
         hbox {
-            addClass("left")
+            addClass(Styles.left)
             paddingTop = DEFAULT_SPACING
             paddingBottom = DEFAULT_SPACING
             label("${messages["encode"]}:")
@@ -155,7 +154,7 @@ class EncodeView : Fragment(messages["encodeAndDecode"]) {
 
         hbox {
             spacing = DEFAULT_SPACING
-            addClass("center")
+            addClass(Styles.center)
             togglegroup {
                 spacing = DEFAULT_SPACING
                 label("charset:")
@@ -175,7 +174,11 @@ class EncodeView : Fragment(messages["encodeAndDecode"]) {
                 }
 
                 label("times:")
-                tfCount = textfield("1") { prefWidth = DEFAULT_SPACING_8X }
+                tfCount =
+                    textfield("1") {
+                        textFormatter = intTextFormatter
+                        prefWidth = DEFAULT_SPACING_8X
+                    }
                 selectedToggleProperty().addListener { _, _, new ->
                     isEncode = new.cast<RadioButton>().text == messages["encode"]
                     run()
@@ -184,6 +187,10 @@ class EncodeView : Fragment(messages["encodeAndDecode"]) {
             button(messages["run"], imageview("/img/run.png")) {
                 enableWhen(!isProcessing)
                 action { run() }
+            }
+            button("crack", imageview("/img/crack.png")) {
+                enableWhen(!isProcessing)
+                action { crack() }
             }
         }
         hbox {
@@ -249,6 +256,26 @@ class EncodeView : Fragment(messages["encodeAndDecode"]) {
                 taOutput.text = result
                 if (Prefs.autoCopy)
                     outputText.copy().also { primaryStage.showToast(messages["copied"]) }
+                timeConsumption = System.currentTimeMillis() - startTime
+                labelInfo.text = info
+            }
+    }
+
+    private fun crack() {
+        runAsync {
+            isProcessing.value = true
+            startTime = System.currentTimeMillis()
+            EncodeType.values()
+                .map {
+                    it.type +
+                        " :\t" +
+                        controller.decode2String(inputText, it, "", selectedCharset.get(), false)
+                }
+                .joinToString("\n")
+        } ui
+            {
+                isProcessing.value = false
+                taOutput.text = it
                 timeConsumption = System.currentTimeMillis() - startTime
                 labelInfo.text = info
             }

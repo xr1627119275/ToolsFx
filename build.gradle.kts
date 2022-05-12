@@ -1,9 +1,9 @@
 
 plugins {
-    kotlin("jvm") version "1.6.20"
-    id("com.diffplug.spotless") version "6.4.1"
+    kotlin("jvm") version "1.6.21"
+    id("com.diffplug.spotless") version "6.5.0"
     id("io.gitlab.arturbosch.detekt") version "1.19.0"
-    id("org.openjfx.javafxplugin") version "0.0.11"
+    id("org.openjfx.javafxplugin") version "0.0.13"
 }
 
 repositories {
@@ -32,7 +32,7 @@ val hook = File("${rootProject.projectDir}/.git/hooks/pre-commit")
 hook.writeBytes(
     """#!/bin/bash
 echo "run code format"
-./gradlew spotlessJCh spotlessKCh
+./gradlew spotlessCheck
 echo "run code smell check"
 ./gradlew detekt
 """.toByteArray()

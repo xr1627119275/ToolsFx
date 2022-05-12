@@ -4,6 +4,7 @@ import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.control.*
+import me.leon.Styles
 import me.leon.controller.SignatureController
 import me.leon.encode.base.base64
 import me.leon.ext.*
@@ -145,14 +146,19 @@ class SignatureView : Fragment(messages["signVerify"]) {
     private var startTime = 0L
     private val info
         get() =
-            "Signature: ${selectedKeyPairAlg.get()} hash: ${selectedSigAlg.get()} cost: ${timeConsumption}ms"
+            "Signature: ${selectedKeyPairAlg.get()} hash: ${selectedSigAlg.get()} " +
+                "${messages["inputLength"]}: ${msg.length}  " +
+                "${messages["outputLength"]}: ${signText.length}  " +
+                "cost: $timeConsumption ms"
     private var inputEncode = "raw"
+    private var outputEncode = "base64"
     private lateinit var tgInput: ToggleGroup
+    private lateinit var tgOutput: ToggleGroup
     private val centerNode = vbox {
-        addClass("group")
+        addClass(Styles.group)
         hbox {
             label(messages["plain"])
-            addClass("left")
+            addClass(Styles.left)
             tgInput =
                 togglegroup {
                     radiobutton("raw") { isSelected = true }
@@ -188,7 +194,7 @@ class SignatureView : Fragment(messages["signVerify"]) {
             }
 
         hbox {
-            addClass("left")
+            addClass(Styles.left)
             label(messages["publicAlg"])
             combobox(selectedKeyPairAlg, keyPairAlgs.keys.toMutableList()) {
                 cellFormat { text = it }
@@ -229,7 +235,17 @@ class SignatureView : Fragment(messages["signVerify"]) {
             }
         }
         hbox {
+            addClass(Styles.left)
             label(messages["sig"])
+            tgOutput =
+                togglegroup {
+                    radiobutton("base64") { isSelected = true }
+                    radiobutton("hex")
+                    selectedToggleProperty().addListener { _, _, newValue ->
+                        outputEncode = newValue.cast<RadioButton>().text
+                    }
+                }
+
             button(graphic = imageview("/img/copy.png")) { action { signText.copy() } }
         }
 
@@ -254,6 +270,7 @@ class SignatureView : Fragment(messages["signVerify"]) {
                 key,
                 msg,
                 inputEncode,
+                outputEncode,
                 isSingleLine.get()
             )
         } ui
@@ -273,6 +290,7 @@ class SignatureView : Fragment(messages["signVerify"]) {
                 key,
                 msg,
                 inputEncode,
+                outputEncode,
                 signText,
                 isSingleLine.get()
             )

@@ -19,16 +19,21 @@ class ToolsApp : App(Home::class, Styles::class) {
 
     private fun initConfig() {
 
-        val file = File(APP_ROOT, "ToolsFx.properties")
+        var file = File(APP_ROOT, "ToolsFx.properties")
         if (!file.exists())
-            javaClass.getResourceAsStream("/ToolsFx.properties").use {
+            javaClass.getResourceAsStream("/ToolsFx.properties")?.use {
                 it.copyTo(file.outputStream())
             }
         properties.load(file.inputStream())
+        file = File(DICT_DIR, "top1000.txt")
+
+        if (!file.exists()) {
+            file.parentFile.mkdirs()
+        }
+        javaClass.getResourceAsStream("/top1000.txt")?.use { it.copyTo(file.outputStream()) }
     }
 
     companion object {
-        var releaseInfo: ReleaseInfo? = null
         val properties: Properties = Properties()
         val isEnableClassical: Boolean
             get() = properties["isEnableClassical"].toString().toBoolean()

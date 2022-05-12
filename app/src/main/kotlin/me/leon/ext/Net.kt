@@ -1,6 +1,5 @@
 package me.leon.ext
 
-import java.lang.IllegalStateException
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -11,7 +10,7 @@ fun String.readBytesFromNet(
     method: String = "GET",
     timeout: Int = DEFAULT_TIME_OUT,
     data: String = "",
-    headers: MutableMap<String, Any> = mutableMapOf()
+    headers: Map<String, Any> = mapOf()
 ) =
     runCatching {
         URL(this)

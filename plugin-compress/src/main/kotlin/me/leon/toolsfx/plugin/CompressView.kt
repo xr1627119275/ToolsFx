@@ -7,7 +7,8 @@ import javafx.scene.control.*
 import me.leon.CHARSETS
 import me.leon.ext.*
 import me.leon.ext.fx.*
-import me.leon.toolsfx.plugin.compress.*
+import me.leon.toolsfx.plugin.compress.compressType
+import me.leon.toolsfx.plugin.compress.compressTypeMap
 import tornadofx.*
 import tornadofx.FX.Companion.messages
 
@@ -39,7 +40,6 @@ class CompressView : PluginFragment(messages["compression"]) {
 
     private var inputEncode = "raw"
     private var outputEncode = "base64"
-
 
     private val eventHandler = fileDraggedHandler {
         taInput.text =
@@ -187,11 +187,11 @@ class CompressView : PluginFragment(messages["compression"]) {
                     isSingleLine.get(),
                 )
         } ui
-                {
-                    isProcessing.value = false
-                    taOutput.text = it
-                    infoLabel.text = info
-                    if (Prefs.autoCopy) it.copy().also { primaryStage.showToast(messages["copied"]) }
-                }
+            {
+                isProcessing.value = false
+                taOutput.text = it
+                infoLabel.text = info
+                if (Prefs.autoCopy) it.copy().also { primaryStage.showToast(messages["copied"]) }
+            }
     }
 }

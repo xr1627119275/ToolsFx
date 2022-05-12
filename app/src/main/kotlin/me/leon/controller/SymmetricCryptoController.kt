@@ -1,6 +1,7 @@
 package me.leon.controller
 
 import java.io.File
+import me.leon.classical.xor
 import me.leon.encode.base.base64
 import me.leon.ext.*
 import me.leon.ext.crypto.*
@@ -16,14 +17,15 @@ class SymmetricCryptoController : Controller() {
         isSingleLine: Boolean = false,
         inputEncode: String = "raw",
         outputEncode: String = "base64",
+        associatedData: ByteArray = byteArrayOf()
     ): String =
         catch({ "encrypt error: $it" }) {
             println("encrypt  $alg")
             if (isSingleLine)
                 data.lineAction2String {
-                    encrypt(it, inputEncode, charset, key, iv, alg, outputEncode)
+                    encrypt(it, inputEncode, charset, key, iv, alg, outputEncode, associatedData)
                 }
-            else encrypt(data, inputEncode, charset, key, iv, alg, outputEncode)
+            else encrypt(data, inputEncode, charset, key, iv, alg, outputEncode, associatedData)
         }
 
     private fun encrypt(
@@ -33,18 +35,27 @@ class SymmetricCryptoController : Controller() {
         key: ByteArray,
         iv: ByteArray,
         alg: String,
-        outputEncode: String
+        outputEncode: String,
+        associatedData: ByteArray = byteArrayOf()
     ) =
         if (alg.startsWith("XXTEA"))
             XXTEA
                 .encrypt(data.decodeToByteArray(inputEncode, charset), key)
                 .encodeTo(outputEncode, charset)
-        else
+        else if (alg == "XOR") {
+            data.decodeToByteArray(inputEncode, charset).xor(key).encodeTo(outputEncode, charset)
+        } else
             data.decodeToByteArray(inputEncode, charset)
-                .encrypt(key, iv, alg)
+                .encrypt(key, iv, alg, associatedData)
                 .encodeTo(outputEncode, charset)
 
-    fun encryptByFile(key: ByteArray, path: String, iv: ByteArray, alg: String) =
+    fun encryptByFile(
+        key: ByteArray,
+        path: String,
+        iv: ByteArray,
+        alg: String,
+        associatedData: ByteArray = byteArrayOf()
+    ) =
         catch({ "encrypt error: $it" }) {
             println("encrypt  $alg")
             val parentFile = path.toFile().parentFile.absolutePath
@@ -57,14 +68,24 @@ class SymmetricCryptoController : Controller() {
                         out.write(XXTEA.encrypt(it.readBytes(), key))
                     }
                 }
-            else path.encryptFile(key, iv, alg, outFileName)
+            else if (alg.startsWith("XOR"))
+                outFileName.toFile().outputStream().use { out ->
+                    path.toFile().inputStream().use { out.write(it.readBytes().xor(key)) }
+                }
+            else path.encryptFile(key, iv, alg, outFileName, associatedData)
             "加密文件路径(同选择文件目录): ${File(outFileName).absolutePath} \n" +
                 "alg: $alg\n" +
                 "key(base64): ${key.base64()}\n" +
                 "iv(base64): ${iv.base64()}\n"
         }
 
-    fun decryptByFile(key: ByteArray, path: String, iv: ByteArray, alg: String) =
+    fun decryptByFile(
+        key: ByteArray,
+        path: String,
+        iv: ByteArray,
+        alg: String,
+        associatedData: ByteArray = byteArrayOf()
+    ) =
         catch({ "decrypt error: $it" }) {
             println("decrypt  $alg")
             val parentFile = path.toFile().parentFile.absolutePath
@@ -77,7 +98,11 @@ class SymmetricCryptoController : Controller() {
                         out.write(XXTEA.decrypt(it.readBytes(), key))
                     }
                 }
-            else path.decryptFile(key, iv, alg, outFileName)
+            else if (alg.startsWith("XOR"))
+                outFileName.toFile().outputStream().use { out ->
+                    path.toFile().inputStream().use { out.write(it.readBytes().xor(key)) }
+                }
+            else path.decryptFile(key, iv, alg, outFileName, associatedData)
             "解密文件路径(同选择文件目录): $outFileName"
         }
 
@@ -90,14 +115,15 @@ class SymmetricCryptoController : Controller() {
         isSingleLine: Boolean = false,
         inputEncode: String = "raw",
         outputEncode: String = "base64",
+        associatedData: ByteArray = byteArrayOf()
     ): String =
         catch({ "decrypt error: $it" }) {
             println("decrypt  $alg")
             if (isSingleLine)
                 data.lineAction2String {
-                    decrypt(it, inputEncode, charset, key, iv, alg, outputEncode)
+                    decrypt(it, inputEncode, charset, key, iv, alg, outputEncode, associatedData)
                 }
-            else decrypt(data, inputEncode, charset, key, iv, alg, outputEncode)
+            else decrypt(data, inputEncode, charset, key, iv, alg, outputEncode, associatedData)
         }
 
     private fun decrypt(
@@ -107,14 +133,17 @@ class SymmetricCryptoController : Controller() {
         key: ByteArray,
         iv: ByteArray,
         alg: String,
-        outputEncode: String
+        outputEncode: String,
+        associatedData: ByteArray = byteArrayOf()
     ) =
         if (alg.startsWith("XXTEA"))
             XXTEA
                 .decrypt(data.decodeToByteArray(inputEncode, charset), key)
                 .encodeTo(outputEncode, charset)
-        else
+        else if (alg == "XOR") {
+            data.decodeToByteArray(inputEncode, charset).xor(key).encodeTo(outputEncode, charset)
+        } else
             data.decodeToByteArray(inputEncode, charset)
-                .decrypt(key, iv, alg)
+                .decrypt(key, iv, alg, associatedData)
                 .encodeTo(outputEncode, charset)
 }

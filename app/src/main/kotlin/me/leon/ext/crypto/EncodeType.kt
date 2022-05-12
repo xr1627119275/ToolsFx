@@ -5,8 +5,6 @@ import java.net.URLEncoder
 import java.nio.charset.Charset
 import me.leon.encode.*
 import me.leon.encode.base.*
-import me.leon.encode.base.base100
-import me.leon.encode.base.base100Decode
 import me.leon.ext.*
 
 enum class EncodeType(val type: String, val defaultDict: String = "") : IEncode {
@@ -23,6 +21,25 @@ enum class EncodeType(val type: String, val defaultDict: String = "") : IEncode 
 
         override fun encode2String(bytes: ByteArray, dict: String, charset: String) =
             bytes.radix64()
+    },
+    Radix8("radix8") {
+        override fun decode(encoded: String, dict: String, charset: String) = encoded.radix8Decode()
+
+        override fun encode2String(bytes: ByteArray, dict: String, charset: String) = bytes.radix8()
+    },
+    Radix10("radix10") {
+        override fun decode(encoded: String, dict: String, charset: String) =
+            encoded.radix10Decode()
+
+        override fun encode2String(bytes: ByteArray, dict: String, charset: String) =
+            bytes.radix10()
+    },
+    Radix32("radix32") {
+        override fun decode(encoded: String, dict: String, charset: String) =
+            encoded.radix32Decode()
+
+        override fun encode2String(bytes: ByteArray, dict: String, charset: String) =
+            bytes.radix32()
     },
     UrlEncode("urlencode") {
         override fun decode(encoded: String, dict: String, charset: String) =
@@ -109,7 +126,7 @@ enum class EncodeType(val type: String, val defaultDict: String = "") : IEncode 
         override fun encode2String(bytes: ByteArray, dict: String, charset: String) =
             bytes.base32(dict)
     },
-    Base36("base36", BASE36_DICT) {
+    Base36("base36(radix36)", BASE36_DICT) {
         override fun decode(encoded: String, dict: String, charset: String) =
             encoded.base36Decode(dict)
 
@@ -123,7 +140,7 @@ enum class EncodeType(val type: String, val defaultDict: String = "") : IEncode 
         override fun encode2String(bytes: ByteArray, dict: String, charset: String) =
             bytes.base45(dict)
     },
-    Base58("base58", BASE58_DICT) {
+    Base58("base58(radix58)", BASE58_DICT) {
         override fun decode(encoded: String, dict: String, charset: String) =
             encoded.base58Decode(dict)
 

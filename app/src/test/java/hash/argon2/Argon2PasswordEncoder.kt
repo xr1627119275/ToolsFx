@@ -44,11 +44,7 @@ constructor(
     var memory: Int = DEFAULT_MEMORY,
     var iterations: Int = DEFAULT_ITERATIONS
 ) : PasswordEncoder {
-    private val saltGenerator: BytesKeyGenerator
-
-    init {
-        saltGenerator = secureRandom(saltLength)
-    }
+    private val saltGenerator: BytesKeyGenerator = secureRandom(saltLength)
 
     var type = Argon2Parameters.ARGON2_id
     var version = Argon2Parameters.ARGON2_VERSION_13
@@ -67,9 +63,9 @@ constructor(
                 .withMemoryAsKB(memory)
                 .withIterations(iterations)
                 .build()
-        val generator = Argon2BytesGenerator()
-        generator.init(params)
-        generator.generateBytes(rawPassword.toString().toCharArray(), hash)
+        Argon2BytesGenerator()
+            .apply { init(params) }
+            .generateBytes(rawPassword.toString().toCharArray(), hash)
         return Argon2EncodingUtils.encode(hash, params)
     }
 
@@ -81,11 +77,11 @@ constructor(
                 ex.printStackTrace()
                 return false
             }
-        val hashBytes = ByteArray(decoded.getHash().size)
+        val hashBytes = ByteArray(decoded.hash.size)
         val generator = Argon2BytesGenerator()
         generator.init(decoded.parameters)
         generator.generateBytes(rawPassword.toString().toCharArray(), hashBytes)
-        return constantTimeArrayEquals(decoded.getHash(), hashBytes)
+        return constantTimeArrayEquals(decoded.hash, hashBytes)
     }
 
     override fun upgradeEncoding(encodedPassword: String): Boolean {

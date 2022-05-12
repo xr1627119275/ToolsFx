@@ -16,7 +16,6 @@
 package hash.keygen
 
 import java.security.SecureRandom
-import kotlin.jvm.JvmOverloads
 
 /**
  * A KeyGenerator that uses [SecureRandom] to generate byte array-based keys.
@@ -28,7 +27,7 @@ import kotlin.jvm.JvmOverloads
 internal class SecureRandomBytesKeyGenerator
 @JvmOverloads
 constructor(override val keyLength: Int = DEFAULT_KEY_LENGTH) : BytesKeyGenerator {
-    private val random: SecureRandom = SecureRandom()
+    private val random = SecureRandom()
 
     override fun generateKey(): ByteArray {
         val bytes = ByteArray(keyLength)

@@ -2,15 +2,18 @@ package me.leon.ext
 
 import java.io.File
 import java.io.Reader
-import javax.script.Invocable
-import javax.script.ScriptEngine
-import javax.script.ScriptEngineManager
+import javax.script.*
 
 object Nashorn {
     private val jsEngine: ScriptEngine = ScriptEngineManager().getEngineByName("nashorn")
 
     fun loadStream(reader: Reader): Nashorn {
         jsEngine.eval(reader)
+        return this
+    }
+
+    fun loadString(script: String): Nashorn {
+        jsEngine.eval(script)
         return this
     }
 

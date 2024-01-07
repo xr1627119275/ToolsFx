@@ -1,7 +1,10 @@
 package me.leon
 
+import kotlin.test.assertEquals
 import me.leon.encode.base.base64
 import me.leon.ext.*
+import me.leon.misc.net.*
+import org.junit.Ignore
 import org.junit.Test
 
 class NetTest {
@@ -13,7 +16,10 @@ class NetTest {
                 "19098&keySource=VodBuildInKMS")
             .readBytesFromNet()
             .base64()
-            .also { println(it) }
+            .also {
+                println(it)
+                assertEquals("5VyPyIv3693VdklBeXVY3g==", it)
+            }
     }
 
     @Test
@@ -26,18 +32,8 @@ class NetTest {
     }
 
     @Test
-    fun fetchJson() {
-        var l: MutableList<String>? = mutableListOf("", "")
-        l.safeAs<HashSet<String>>().also { println(it) }
-        l = null
-        l.safeAs<HashSet<String>>().also { println(it) }
-        l.cast<HashSet<String>>()
-    }
-
-    @Test
     fun fileRead() {
-        TEST_PRJ_DIR
-            .listFiles()
+        TEST_PRJ_DIR.listFiles()
             ?.filter { it.isFile && it.readText().contains("key|flag|ctf".toRegex()) }
             .also { println(it) }
     }
@@ -45,5 +41,30 @@ class NetTest {
     @Test
     fun fileType() {
         TEST_PRJ_DIR.listFiles()?.forEach { println(it.realExtension()) }
+    }
+
+    @Test
+    @Ignore
+    fun miit() {
+        val url = "baidu.com"
+        println(MiitInfo.domainInfo(url).showInfo)
+    }
+
+    @Test
+    //    @Ignore
+    fun whois() {
+
+        Whois.parse("taobao.com").also { println(it?.showInfo) }
+
+        Whois.parse("www.52pojie.cn").also { println(it?.showInfo) }
+    }
+
+    @Test
+    fun whoisSocket() {
+        //        flushSquid()
+        //        println("52pojie.cn".whoisSocket())
+        //        println("taobao.com".whoisSocket())
+        println("taobao.新闻".whoisSocket())
+        println("ctf.mzy0.com".whoisSocket())
     }
 }

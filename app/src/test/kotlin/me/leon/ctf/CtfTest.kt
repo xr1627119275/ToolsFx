@@ -1,6 +1,8 @@
 package me.leon.ctf
 
+import java.io.File
 import kotlin.test.assertEquals
+import me.leon.TEST_CTF_DIR
 import me.leon.classical.*
 import me.leon.encode.base.base100
 import me.leon.encode.base.base100Decode2String
@@ -26,9 +28,9 @@ class CtfTest {
         val d = "HelloWorldab"
         val d2 = "gesfcinphodtmwuqouryzejrehbxvalookT"
         val d3 = "The quick brown fox jumps over the lazy dog".replace(" ", "")
-        assertEquals("lrbaoleWdloH", d.curveCipher(3, 4))
         assertEquals(d, "lrbaoleWdloH".curveCipherDecode(3, 4))
         assertEquals("Thequickbrownfoxjumpsoverthelazydog", d2.curveCipherDecode(5, 7))
+        assertEquals("lrbaoleWdloH", d.curveCipher(3, 4))
         assertEquals(d2, d3.curveCipher(5, 7))
     }
 
@@ -178,6 +180,30 @@ class CtfTest {
     }
 
     @Test
+    fun brainFuckEncode() {
+        val engine = BrainfuckEngine()
+
+        // for test
+        //        (0..126).forEach {
+        //            val loops = it.pointerLoopCalculate().translate()
+        //            println("$it = " + engine.interpret(loops))
+        //        }
+
+        val message = "HelloWorld!"
+
+        assertEquals(message, message.encode().brainFuckDecrypt())
+        assertEquals(message, message.brainFuckShortEncode().brainFuckDecrypt())
+
+        val encodeShort = message.brainFuckShortEncode()
+        assertEquals(message, engine.interpret(encodeShort))
+
+        val troll = message.brainFuckShortEncode(TrollScriptEngine.Token)
+        assertEquals(message, troll.trollScriptDecrypt())
+        val ook = message.brainFuckShortEncode(OokEngine.Token)
+        assertEquals(message, ook.ookDecrypt())
+    }
+
+    @Test
     fun b100() {
         val s = "hello开发工具箱".toByteArray()
         val encoded = s.base100()
@@ -225,7 +251,83 @@ class CtfTest {
     @Test
     fun zwc() {
         val d = "w\u200D\uFEFF\u200C\u200B\u200D\uFEFF\u200D\u200B\u200D\uFEFF\uFEFFhat"
-        assertEquals(d, "abc".zwc("what"))
-        assertEquals("abc", d.zwcDecode())
+        assertEquals(d, "abc".zwcBinary("what"))
+        assertEquals("abc", d.zwcBinaryDecode())
+
+        println(
+            ("春风再美也比上你的笑，\u200C\u200D\u200C\u200B\u200D\u200D\u200D\u200B\u200C\u200C\u200C\u200D\u200B" +
+                    "\u200C\u200B\u200C\u200D\u200C\u200C\u200B\u200C\u200D\u200B\u200C\u200C\u200C\u200B" +
+                    "\u200D没见过你的人不会明了")
+                .zwcMorseDecode()
+        )
+
+        val encrypt =
+            "a\u200C\u200C\u200C\u200C\u200B\u200C\u200B\u200C\u200D\u200C\u200C\u200B\u200C" +
+                "\u200D\u200C\u200C\u200B\u200D\u200D\u200Dbce"
+        assertEquals(encrypt, "hello".zwcMorse("abce"))
+        assertEquals("hello", encrypt.zwcMorseDecode())
+
+        val raw = "隐藏hide数据"
+        val hide =
+            "w\u200D\u200C\u200C\u200D\u200C\u200D\u200D\u200C\u200D\u200C\u200C\u200D\u200C\u200C\u200C\u200C\u200B" +
+                "\u200D\u200C\u200C\u200C\u200C\u200D\u200C\u200D\u200D\u200D\u200C\u200C\u200D\u200D\u200D\u200D" +
+                "\u200B\u200C\u200C\u200C\u200C\u200B\u200C\u200C\u200B\u200D\u200C\u200C\u200B\u200C\u200B\u200D" +
+                "\u200D\u200C\u200C\u200D\u200C\u200D\u200C\u200D\u200D\u200D\u200C\u200C\u200C\u200C\u200B\u200D" +
+                "\u200D\u200C\u200C\u200C\u200D\u200D\u200C\u200D\u200D\u200C\u200D\u200D\u200D\u200Chere is flag"
+
+        assertEquals(hide, raw.zwcMorse("where is flag"))
+        assertEquals(raw, hide.zwcMorseDecode())
+    }
+
+    @Test
+    fun zwcUnicode() {
+        var dict = "\\u200c\\u200d\\u202c\\ufeff"
+        val raw = "hide"
+        var encode =
+            "s\u200C\u200C\u200C\u200C\u200D\u202C\u202C\u200C\u200C\u200C\u200C\u200C\u200D\u202C" +
+                "\u202C\u200D\u200C\u200C\u200C\u200C\u200D\u202C\u200D\u200C\u200C\u200C\u200C" +
+                "\u200C\u200D\u202C\u200D\u200Dhow"
+        assertEquals(encode, raw.zwcUnicode("show", dict))
+        assertEquals(raw, encode.zwcUnicodeDecode(dict))
+
+        dict = "\\u200b\\u200c\\u200d\\u202c"
+        encode =
+            "s\u200B\u200B\u200B\u200B\u200C\u200D\u200D\u200B\u200B\u200B\u200B\u200B\u200C\u200D" +
+                "\u200D\u200C\u200B\u200B\u200B\u200B\u200C\u200D\u200C\u200B\u200B\u200B\u200B" +
+                "\u200B\u200C\u200D\u200C\u200Chow"
+        assertEquals(encode, raw.zwcUnicode("show", dict))
+        assertEquals(raw, encode.zwcUnicodeDecode(dict))
+
+        dict = "\\u200b\\u200c\\u200d\\u200e\\u200f"
+        encode =
+            "你\u200D\u200D\u200C\u200E\u200C\u200E\u200F\u200D\u200B\u200F\u200F\u200B\u200C\u200B\u200C\u200C" +
+                "\u200D\u200E\u200D\u200F\u200F\u200C\u200D\u200F\u200D\u200D\u200D\u200D好ad"
+        assertEquals("隐藏信息", encode.zwcUnicodeDecode(dict))
+
+        val data = File(TEST_CTF_DIR, "zwc_unicode2.txt").readText()
+        assertEquals(data.zwcUnicodeDecode(), data.zwcUnicodeDecode("\\u200f\\u202a\\u202c"))
+    }
+
+    @Test
+    fun zwcUnicode2() {
+        val dict = "\\u200c\\u200d\\u202c\\ufeff"
+        val expected = "flag{z1p_wiTh_z3r0width_1s_So_H4rdddddd~}"
+        val encode =
+            "\u200D\u202C\u200D\u202Cwhere\u200D\u202C\uFEFF\u200C \u200D\u202C\u200C\u200D\u200D\u202C\u200D\uFEFFis" +
+                "\u200D\uFEFF\u202C\uFEFF flag\u200D\uFEFF\u202C\u202C\u200C\uFEFF\u200C\u200D\u200D\uFEFF\u200C" +
+                "\u200C\u200D\u200D\uFEFF\uFEFF?\u200D\uFEFF\u200D\uFEFF\u200D\u202C\u202C\u200D\u200D\u200D\u200D" +
+                "\u200C\u200D\u202C\u202C\u200C\u200D\u200D\uFEFF\uFEFF\u200D\uFEFF\u202C\u202C\u200C\uFEFF\u200C" +
+                "\uFEFF\u200D\uFEFF\u200C\u202C\u200C\uFEFF\u200C\u200C\u200D\uFEFF\u200D\uFEFF\u200D\u202C" +
+                "\u202C\u200D\u200D\u202C\u200D\u200C\u200D\uFEFF\u200D\u200C\u200D\u202C\u202C\u200C\u200D" +
+                "\u200D\uFEFF\uFEFF\u200C\uFEFF\u200C\u200D\u200D\uFEFF\u200C\uFEFF\u200D\u200D\uFEFF\uFEFF" +
+                "\u200D\u200D\u200C\uFEFF\u200D\u202C\uFEFF\uFEFF\u200D\u200D\uFEFF\uFEFF\u200D\u200C\u202C" +
+                "\u200C\u200C\uFEFF\u200D\u200C\u200D\uFEFF\u200C\u202C\u200D\u202C\u200D\u200C\u200D\u202C" +
+                "\u200D\u200C\u200D\u202C\u200D\u200C\u200D\u202C\u200D\u200C\u200D\u202C\u200D\u200C\u200D" +
+                "\u202C\u200D\u200C\u200D\uFEFF\uFEFF\u202C\u200D\uFEFF\uFEFF\u200D"
+        val show = "where is flag"
+        assertEquals(expected, encode.zwcUnicodeDecodeBinary(dict))
+
+        val encoded = expected.zwcUnicodeBinary(show, dict)
+        assertEquals(expected, encoded.zwcUnicodeDecodeBinary(dict))
     }
 }

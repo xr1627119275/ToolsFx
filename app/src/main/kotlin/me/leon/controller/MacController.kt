@@ -1,5 +1,6 @@
 package me.leon.controller
 
+import me.leon.DEBUG
 import me.leon.ext.*
 import me.leon.ext.crypto.mac
 import me.leon.ext.crypto.macWithIv
@@ -13,15 +14,17 @@ class MacController : Controller() {
         alg: String,
         inputEncode: String,
         outputEncode: String,
-        isSingleLine: Boolean = false
+        singleLine: Boolean = false
     ) =
         catch({ "mac error: $it" }) {
-            println("mac $msg  $alg ")
-            if (isSingleLine)
+            if (DEBUG) println("mac $msg  $alg ")
+            if (singleLine) {
                 msg.lineAction2String {
                     it.decodeToByteArray(inputEncode).mac(keyByteArray, alg).encodeTo(outputEncode)
                 }
-            else msg.decodeToByteArray(inputEncode).mac(keyByteArray, alg).encodeTo(outputEncode)
+            } else {
+                msg.decodeToByteArray(inputEncode).mac(keyByteArray, alg).encodeTo(outputEncode)
+            }
         }
 
     fun macWithIv(
@@ -31,18 +34,19 @@ class MacController : Controller() {
         alg: String,
         inputEncode: String,
         outputEncode: String,
-        isSingleLine: Boolean = false
+        singleLine: Boolean = false
     ) =
         catch({ "mac error: $it" }) {
-            if (isSingleLine)
+            if (singleLine) {
                 msg.lineAction2String {
                     it.decodeToByteArray(inputEncode)
                         .macWithIv(keyByteArray, ivByteArray, alg)
                         .encodeTo(outputEncode)
                 }
-            else
+            } else {
                 msg.decodeToByteArray(inputEncode)
                     .macWithIv(keyByteArray, ivByteArray, alg)
                     .encodeTo(outputEncode)
+            }
         }
 }

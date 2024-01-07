@@ -18,15 +18,14 @@ class Collections {
         }
         arraySetOf<Int>()
         arraySetOf(4, 1, 2, 3, 3, 41, 4, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0).also { println(it) }
-        var cache = lruCache<String, String>(3).also { println(it) }
         // sizeOf每个元素的大小 create 元素不存在时是否创建,默认不创建
-        cache =
+        val cache =
             lruCache(
-                6,
-                { _: String, _: String -> 2 },
-                { k: String -> "$k+111" },
-                { b, k, old, new -> if (!b) println("$k change : $old --> $new") }
-            )
+                    6,
+                    { _: String, _: String -> 2 },
+                    { k: String -> "$k+111" },
+                    { b, k, old, new -> if (!b) println("$k change : $old --> $new") }
+                )
                 .also { println(it) }
         cache.put("1", "1")
         cache.put("2", "2")
@@ -34,13 +33,13 @@ class Collections {
         cache.put("2", "22")
         println(cache.toString() + " " + cache.snapshot())
         //        cache.put("2", "22")
-        println(cache.get("1"))
+        println(cache["1"])
         println(cache.toString() + " " + cache.snapshot())
-        println(cache.get("2"))
+        println(cache["2"])
         println(cache.toString() + " " + cache.snapshot())
         cache.put("4", "1")
         println(cache.toString() + " " + cache.snapshot())
-        println(cache.get("5"))
+        println(cache["5"])
         println(cache.toString() + " " + cache.snapshot())
 
         SparseArrayCompat<String>().put(1, "1")
@@ -144,11 +143,12 @@ class Collections {
 
     @Test
     fun typeMemory() {
-        println(GraphLayout.parseInstance(mapOf<String, Any>()).toFootprint())
+        println(GraphLayout.parseInstance(emptyMap<String, Any>()).toFootprint())
         println(GraphLayout.parseInstance(mutableMapOf<String, Any>()).toFootprint())
         val stringList =
             mutableListOf("330108000001", "330108000002", "330108000003", "330108000004")
-        val longList = mutableListOf(330108000001L, 330108000002L, 330108000003L, 330108000004L)
+        val longList =
+            mutableListOf(330_108_000_001L, 330_108_000_002L, 330_108_000_003L, 330_108_000_004L)
         println(
             GraphLayout.parseInstance(stringList).also { println(it.totalSize()) }.toPrintable()
         )

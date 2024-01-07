@@ -1,6 +1,7 @@
 package me.leon.ctf
 
 import javax.crypto.Cipher
+import me.leon.encode.base.BYTE_MASK
 import me.leon.ext.crypto.makeCipher
 
 private const val CIPHER = "AES/CBC/PKCS5Padding"
@@ -11,15 +12,21 @@ private const val BYTE_MAP =
         "蒙孕薩夷迦他姪豆特逝朋輸楞栗寫數曳諦羅曰咒即密若般故不實真訶切一除能等是上明大神知三藐耨得依諸世槃涅竟究想夢倒顛離遠怖恐有礙心所以亦智道。集盡死老至"
 
 private const val BYTE128MAP = "奢梵呐俱哆怯諳罰侄缽皤"
+private const val BUDDHA_HEADER = "佛曰："
+private const val MO_HEADER = "魔曰："
 
 fun String.buddhaSays(): String {
     return makeCipher(CIPHER, KEY.toByteArray(), IV.toByteArray(), Cipher.ENCRYPT_MODE)
         .doFinal(toByteArray(Charsets.UTF_16LE))
         .run {
-            fold(StringBuilder("佛曰：")) { acc, b ->
+            fold(StringBuilder(BUDDHA_HEADER)) { acc, b ->
                     acc.apply {
-                        if (b >= 0) append(BYTE_MAP[b.toInt()])
-                        else append(BYTE128MAP.random()).append(BYTE_MAP[b.toInt() and 0xFF - 128])
+                        if (b >= 0) {
+                            append(BYTE_MAP[b.toInt()])
+                        } else {
+                            append(BYTE128MAP.random())
+                                .append(BYTE_MAP[b.toInt() and BYTE_MASK - 128])
+                        }
                     }
                 }
                 .toString()
@@ -28,8 +35,14 @@ fun String.buddhaSays(): String {
 
 fun String.buddhaExplain(): String {
     var flag = false
+    val data =
+        if (contains(MO_HEADER)) {
+            replace(MO_HEADER, "").reversed()
+        } else {
+            replace(BUDDHA_HEADER, "")
+        }
     val encryptedBytes =
-        replace("佛曰：", "")
+        data
             .fold(mutableListOf<Byte>()) { acc, c ->
                 acc.apply {
                     flag =

@@ -1,3 +1,5 @@
+@file:Suppress("UNCHECKED_CAST")
+
 package me.leon.toolsfx.plugin.table
 
 import javafx.event.EventHandler
@@ -14,7 +16,7 @@ internal object CellGenerator {
     private val defaultStringConverter: StringConverter<*> =
         object : StringConverter<Any?>() {
             override fun toString(t: Any?): String {
-                return t?.toString() ?: ""
+                return t?.toString().orEmpty()
             }
 
             override fun fromString(string: String): Any? {
@@ -27,8 +29,15 @@ internal object CellGenerator {
     }
 
     private fun <T> getItemText(cell: Cell<T>, converter: StringConverter<T>?): String {
-        return if (converter == null) if (cell.item == null) "" else cell.item.toString()
-        else converter.toString(cell.item)
+        return if (converter == null) {
+            if (cell.item == null) {
+                ""
+            } else {
+                cell.item.toString()
+            }
+        } else {
+            converter.toString(cell.item)
+        }
     }
 
     fun <T> updateItem(cell: Cell<T>, converter: StringConverter<T>?, textField: TextField?) {
@@ -97,16 +106,16 @@ internal object CellGenerator {
     fun <T> createTextField(cell: Cell<T>, converter: StringConverter<T>?): TextField {
         val textField = TextField(getItemText(cell, converter))
         val cellEdit = cell as EditingCell<*, *>
-        textField.onMouseExited =
-            EventHandler {
-                checkNotNull(converter) {
-                    ("Attempting to convert text input into Object, but provided " +
-                        "StringConverter is null. Be sure to set a StringConverter " +
-                        "in your cell factory.")
-                }
-                cell.commitEdit(converter.fromString(textField.text))
+        textField.onMouseExited = EventHandler {
+            checkNotNull(converter) {
+                ("Attempting to convert text input into Object, but provided " +
+                    "StringConverter is null. Be sure to set a StringConverter " +
+                    "in your cell factory.")
             }
+            cell.commitEdit(converter.fromString(textField.text))
+        }
         textField.addEventFilter(KeyEvent.KEY_PRESSED) { event: KeyEvent ->
+            @Suppress("ElseCaseInsteadOfExhaustiveWhen")
             when (event.code) {
                 KeyCode.ESCAPE -> {
                     cell.cancelEdit()

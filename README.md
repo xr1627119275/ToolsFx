@@ -3,10 +3,13 @@
 <h1 align="center">ToolsFx</h1>
 <p align="center">
 <a href="https://github.com/Leon406/ToolsFx/releases/latest"><img src="https://img.shields.io/github/release/Leon406/ToolsFx.svg"/></a>
-<a href="https://github.com/Leon406/ToolsFx/actions/workflows/detekt-analysis.yml/badge.svg"><img src="https://github.com/Leon406/ToolsFx/actions/workflows/detekt-analysis.yml/badge.svg"/></a><img src="https://img.shields.io/badge/language-kotlin-orange.svg"/>
+<a href="https://github.com/Leon406/ToolsFx/actions/workflows/app-test.yml"><img src="https://github.com/Leon406/ToolsFx/actions/workflows/app-test.yml/badge.svg"/></a>
+<a href="https://github.com/Leon406/ToolsFx/actions/workflows/detekt.yml"><img src="https://github.com/Leon406/ToolsFx/actions/workflows/detekt.yml/badge.svg"/></a>
+<img src="https://img.shields.io/badge/language-kotlin-orange.svg"/>
 <a href="changelog.md"><img src="https://img.shields.io/badge/updates-%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97-brightgreen"/></a>
 <img src="https://img.shields.io/badge/license-ISC-green"/>
 <img src="https://img.shields.io/github/downloads/Leon406/Toolsfx/total"/>
+<a target="_blank" href="https://qm.qq.com/cgi-bin/qm/qr?k=RfiFeARrf_XDHsT0_TzwbWPIpxDTCx4Z&jump_from=webapi&authKey=zDsFRjKKhpfstcAP/XouVrrFO7m+vfjU3S7j5ZuXo1SnxTpPKIQyLX2da+bowY1P"><img border="0" src="https://pub.idqqimg.com/wpa/images/group.png" alt="ToolsFx交流群" title="ToolsFx交流群"></a>
 <a href="https://gitter.im/ToolsFx/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge"><img src="https://badges.gitter.im/ToolsFx/community.svg"/></a>
 </p>
 <p align="center">
@@ -23,7 +26,7 @@
 
 ## Function
 
-### Encoding
+### Encoding  [wiki](https://github.com/Leon406/ToolsFx/wiki/%E7%BC%96%E8%A7%A3%E7%A0%81(Encoding))
 
 - [x] base64
 - [x] urlBase64
@@ -39,8 +42,11 @@
 - [x] uuEncode
 - [x] xxEncode
 - [x] escape/escapeAll
+- [x] auto decode(crack)
 
 ![encode](./art/encode.gif)
+
+![one key decode](./art/one_key_decode.gif)
 
 **String Process(e.g. Split)**
 
@@ -58,12 +64,13 @@ support file, big file which is larger than 8Gi
 
 - [x] md serial
 - [x] sha1
-- [x] sha2 
+- [x] sha2
 - [x] sha3
 - [x] SM3
 - [x] RIPEMD
 - [x] whirlpool
 - [x] Tiger
+- [x] dictionary hash mapping(crack)
 - [x] etc.
 
 ![hash](./art/hash.gif)
@@ -188,7 +195,7 @@ support file, big file which is larger than 8Gi
 - [x] SM2
 - [ ] other
 
-### Classical Crypto (for CTF)
+### Classical Crypto (for CTF) 
 
 - [x] caesar
 - [x] rot5/rot13/rot18/rot47
@@ -220,21 +227,35 @@ support file, big file which is larger than 8Gi
 - [x] Gray code
 - [x] Buddha Says(佛曰)
 - [x] Hill Cipher
-- [x] 新佛曰/兽曰/熊曰(online)
+- [x] 新佛曰/兽音/熊曰(online)
 - [x] rabbit
 - [x] aaencode/jjencode
+- [x] RSA crack (nec,pqec)
+- [x] etc.
 
 ![ctf](./art/ctf.gif)
+![rsa_nec](./art/rsa_nec.gif)
 
 ### PBE
 
 ![pbe](./art/pbe.gif)
+
+### misc模块
+
+- timestamp to date
+- date to timestamp
+- uuid
+- port scan
+- ip scan
+- ping
+- tcping
 
 ### Others
 
 - [x] Qrcode/OCR
 - [x] String Process
 - [x] Big Integer Calculator
+- [x] ECC Calculator
 - [ ] TBD
 
 ### Features
@@ -261,14 +282,20 @@ download boost https://leon.lanzoui.com/b0d9av2kb code：52pj plugin download ht
 
 ## Version Choose
 
-- with jre environment
-    - jdk8 choose suffix with jdk8
-    - jdk11+ choose suffix with jdk11 & also need to config javafx environment
-- w/o jre environment(Windows user only)
-    - 64bit Windows x64 (jre11)
-    - 32/64bit Windows x86 (jre8,have no idea, choose this)
-- beta (jar file)
+- with jre environment (for developer)
+    - jdk8                         ----   choose suffix with jdk8-all-platform
+    - jdk11+                     ----   choose suffix with  jdk17-no-jfx-all-platform & also need to config javafx environment
+    
+- w/o jre environment(Windows user only,normal user)
+    - 64bit Windows       ----   withjre-win-x64(latest LTS version)
+    - 32/64bit Windows  ----   jdk8-withjre-windows-x86  (if have no idea, choose this)
+    
+- beta (jar file, for geeker)
   copy jar file to lib directory and delete ToolsFx-xxx.jar or app-xx.jar
+  
+- [github action nightly(same as beta,build when code change)](https://github.com/Leon406/ToolsFx/actions/workflows/app-test.yml)
+
+    [nightly download ](https://nightly.link/Leon406/ToolsFx/workflows/app-test/dev/artifact.zip)
 
 ## How to Run
 
@@ -280,16 +307,18 @@ download boost https://leon.lanzoui.com/b0d9av2kb code：52pj plugin download ht
 When Application is running ,it will generate ToolsFx.properties automatically , just modify the value. Below are the
 details.
 
-| key                     | value                                             |
-| ----------------------- | ------------------------------------------------- |
-| isEnableClassical       | Classical module switch,default is false          |
-| isEnablePBE             | PBE module switch,default is false                |
-| isEnableSignature       | Signature module switch,default is  true          |
-| isEnableMac             | MAC module switch,default is  true                |
-| isEnableSymmetricStream | Symmetric( Stream) module switch,default is  true |
-| isEnableQrcode          | Qrcode module switch,default is  true             |
-| isEnableInternalWebview | Internal Browser switch,default is false          |
-| extUrls                 | Internal Browser favourite urls, spit with comma  |
+| key                     | value                                                |
+| ----------------------- |------------------------------------------------------|
+| isEnableClassical       | Classical module switch,default is false             |
+| isEnablePBE             | PBE module switch,default is false                   |
+| isEnableSignature       | Signature module switch,default is  true             |
+| isEnableMac             | MAC module switch,default is  true                   |
+| isEnableSymmetricStream | Symmetric( Stream) module switch,default is  true    |
+| isEnableQrcode          | Qrcode module switch,default is  true                |
+| isEnableInternalWebview | Internal Browser switch,default is false             |
+| offlineMode             | offline mode, hide online functions,default is false |
+| uiScale                 | Application UI scale rate, default is -1             |
+| extUrls                 | Internal Browser favourite urls, spit with comma     |
 
 ## [PLUGIN](README-plugin.md)
 
@@ -306,6 +335,10 @@ see [changelog.md](changelog.md)
 [tornadofx](https://github.com/edvin/tornadofx)
 
 [badge maker](https://shields.io/)
+
+## DONATE
+
+[donate](https://afdian.net/a/leon406) (now only support alipay and wechat pay)
 
 ## Stargazers over time
 

@@ -1,15 +1,15 @@
 package me.leon.ctf
 
 fun String.curveCipher(row: Int, col: Int) =
-    chunked(col).let {
+    chunked(col).run {
         var reverseFlag = false
         val sb = StringBuilder()
-        for (i in this.indices) {
+        for (i in this@curveCipher.indices) {
             if (i % row == 0) {
                 reverseFlag = !reverseFlag
             }
             val listIndex = if (reverseFlag) i % row else row - i % row - 1
-            sb.append(it[listIndex][i / row])
+            sb.append(this[listIndex][i / row])
         }
         sb.reverse().toString()
     }

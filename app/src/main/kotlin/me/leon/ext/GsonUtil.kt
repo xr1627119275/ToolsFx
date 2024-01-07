@@ -4,10 +4,6 @@ import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.google.gson.reflect.TypeToken
 
-/**
- * <p>description： gson 工具</p> <p>author：Leon</p> <p>date：2019/3/28 0028</p>
- * <p>e-mail：deadogone@gmail.com</p>
- */
 object GsonUtil {
     private val gson = Gson()
 
@@ -30,5 +26,7 @@ object GsonUtil {
 fun Any.toJson() = GsonUtil.toJson(this)
 
 fun <T> String.fromJson(clazz: Class<T>) = GsonUtil.fromJson(this, clazz)
+
+inline fun <reified T> String.fromJson() = GsonUtil.fromJson(this, T::class.java)
 
 fun <T> String.fromJsonArray(clazz: Class<T>) = GsonUtil.jsonToArrayList(this, clazz)

@@ -35,7 +35,7 @@ fun main() {
         OptionsBuilder()
             .measurementIterations(1)
             .warmupIterations(0)
-            .include(SimpleBench::class.java.simpleName)
+            .include(IterableBench::class.java.simpleName)
             .forks(1)
             .build()
 

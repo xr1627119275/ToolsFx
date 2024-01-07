@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package me.leon.toolsfx.plugin.net
 
 import java.net.*
@@ -7,12 +9,8 @@ object NetHelper {
 
     private val REG_CONTENT_DISPOSITION =
         Pattern.compile("filename=([^;]*)$|filename\\*=\"?.*'+([^;'\"]+)\"?")
-    const val ILLEGAL_FILE_NAME_PATTERN = "[\\/:?*\"<>|]"
     private val REG_CHINESE = Pattern.compile("[\\u4e00-\\u9fa5]")
-
-    const val COMMON_UA =
-        "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) " +
-            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Mobile Safari/537.36"
+    private val regexHeader = "([^:]+?): *(.*) *\\s*".toRegex()
 
     /** 根据响应头或者url获取文件名 */
     fun getNetFileName(response: HttpURLConnection) =
@@ -65,7 +63,6 @@ object NetHelper {
         return null
     }
 
-    private val regexHeader = "([^:]+?): *(.*) *\\s*".toRegex()
     fun parseHeaderString(headers: String) =
         regexHeader.findAll(headers).fold(mutableMapOf<String, Any>()) { acc, matchResult ->
             acc.apply { acc[matchResult.groupValues[1]] = matchResult.groupValues[2] }
@@ -74,7 +71,8 @@ object NetHelper {
     fun String.proxyType() =
         when (this) {
             "DIRECT" -> Proxy.Type.DIRECT
-            "SOCKS4", "SOCKS5" -> Proxy.Type.SOCKS
+            "SOCKS4",
+            "SOCKS5" -> Proxy.Type.SOCKS
             "HTTP" -> Proxy.Type.HTTP
             else -> Proxy.Type.DIRECT
         }

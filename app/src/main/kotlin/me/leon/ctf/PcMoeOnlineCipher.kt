@@ -28,8 +28,7 @@ object PcMoeOnlineCipher {
     fun decrypt(mode: String, text: String) = request(mode, false, text)
 
     private fun request(mode: String, isEncode: Boolean, data: String) =
-        PCMOE_URL
-            .readBytesFromNet(
+        PCMOE_URL.readBytesFromNet(
                 "POST",
                 data =
                     mapOf(
@@ -47,6 +46,4 @@ object PcMoeOnlineCipher {
                     )
             )
             .decodeToString()
-
-    private fun Map<String, Any>.toParams() = entries.joinToString("&") { it.key + "=" + it.value }
 }

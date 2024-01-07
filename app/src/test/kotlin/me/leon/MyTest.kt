@@ -1,16 +1,25 @@
 package me.leon
 
+import java.io.ByteArrayInputStream
 import java.io.File
-import java.nio.charset.Charset
+import java.security.Security
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
 import me.leon.encode.base.base64
+import me.leon.encode.base.base64Decode
 import me.leon.ext.*
 import me.leon.ext.crypto.parsePublicKeyFromCerFile
+import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.junit.Test
 
 class MyTest {
+
+    init {
+        Security.addProvider(BouncyCastleProvider())
+    }
 
     @Test
     fun cerParse() {
@@ -20,11 +29,6 @@ class MyTest {
         File(TEST_DATA_DIR, "rsa/pub_cer_2048.pem").parsePublicKeyFromCerFile().also {
             println(it.base64())
         }
-    }
-
-    @Test
-    fun exceptionTest() {
-        println(NullPointerException().stacktrace())
     }
 
     @Test
@@ -49,9 +53,9 @@ class MyTest {
     fun charset() {
         val r = "中国China 666"
         val uft8Bytes = r.toByteArray()
-        val gbkBytes = r.toByteArray(Charset.forName("gb2312"))
-        val big5Bytes = r.toByteArray(Charset.forName("BIG5"))
-        val iso88591 = r.toByteArray(Charset.forName("ISO8859-1"))
+        val gbkBytes = r.toByteArray(GBK)
+        val big5Bytes = r.toByteArray(BIG5)
+        val iso88591 = r.toByteArray(Charsets.ISO_8859_1)
         uft8Bytes.contentToString().also { println(it) }
         println(gbkBytes.charsetChange("gbk", "utf-8").contentToString())
         println(big5Bytes.charsetChange("BIG5", "utf-8").contentToString())
@@ -62,10 +66,10 @@ class MyTest {
 
         String(iso88591).also { println(it) }
         String(uft8Bytes).also { println(it) }
-        uft8Bytes.toString(Charset.forName("gb2312")).also { println(it) }
-        gbkBytes.toString(Charset.forName("gbk")).also { println(it) }
-        big5Bytes.toString(Charset.forName("big5")).also { println(it) }
-        iso88591.toString(Charset.forName("utf-8")).also { println(it) }
+        uft8Bytes.toString(GBK).also { println(it) }
+        gbkBytes.toString(GBK).also { println(it) }
+        big5Bytes.toString(BIG5).also { println(it) }
+        iso88591.toString(Charsets.UTF_8).also { println(it) }
     }
 
     @Test
@@ -77,30 +81,33 @@ class MyTest {
     }
 
     @Test
-    fun sss() {
-        val map =
-            mapOf(
-                0 to arrayOf('目', '口', '凹', '凸', '田'),
-                1 to arrayOf('由'),
-                2 to arrayOf('中'),
-                3 to arrayOf('人', '入', '古'),
-                4 to arrayOf('工', '互'),
-                5 to arrayOf('果', '克', '尔', '土', '大'),
-                6 to arrayOf('木', '王'),
-                7 to arrayOf('夫', '主'),
-                8 to arrayOf('井', '关', '丰', '并'),
-                9 to arrayOf('圭', '羊'),
-            )
+    fun updateJsonParse() {
+        println('你'.code)
+        println('你'.code / 256)
+        println('你'.code % 256)
+        //  "79, 96"
+        println("你".toByteArray(Charsets.UTF_16BE).contentToString())
+        println("你".toByteArray(Charsets.UTF_16LE).contentToString())
 
-        map.values.zip(map.keys).flatMap { (array, key) -> array.map { it to key } }.toMap().also {
-            println(it)
+        println(File.separatorChar)
+        File("${TEST_PRJ_DIR.absolutePath}/update.json").readText().fromJson(Map::class.java).also {
+            println(it["info"])
         }
     }
 
     @Test
-    fun updateJsonParse() {
-        File("${TEST_PRJ_DIR.absolutePath}/update.json").readText().fromJson(Map::class.java).also {
-            println(it["info"])
+    fun zip() {
+        val data =
+            "UEsDBBQAAAAIAAldCFXqOw7cKAAAACYAAAAIAAAAZmxhZy50eHRLy0lMrzZISk02SEwxTkk0MjQ0TjY3SDU1SEsxNTM0T7JI" +
+                "NU+zrAUAUEsBAhQAFAAAAAgACV0IVeo7DtwoAAAAJgAAAAgAJAAAAAAAAAAgAAAAAAAAAGZsYWcudHh0CgAgAAAA" +
+                "AAABABgAGxEfk9iq2AEbER+T2KrYAQJF+4rYqtgBUEsFBgAAAAABAAEAWgAAAE4AAAAAAA"
+
+        ZipInputStream(ByteArrayInputStream(data.base64Decode())).run {
+            var entry: ZipEntry? = null
+            while (nextEntry?.also { entry = it } != null) {
+                println(entry)
+                println(this.readBytes().decodeToString())
+            }
         }
     }
 }

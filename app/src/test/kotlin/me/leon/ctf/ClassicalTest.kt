@@ -2,6 +2,8 @@ package me.leon.ctf
 
 import kotlin.test.assertEquals
 import me.leon.classical.*
+import me.leon.ext.crypto.TABLE_A_Z
+import me.leon.ext.crypto.TABLE_A_Z_LOWER
 import me.leon.ext.stripAllSpace
 import org.junit.Test
 
@@ -9,8 +11,7 @@ class ClassicalTest {
     @Test
     fun caesar() {
         val plain = "hello! yoshiko"
-        println(plain.shift26(3))
-        assertEquals("KHOOR! BRVKLNR", plain.shift26(3))
+        assertEquals("khoor! brvklnr", plain.shift26(3))
         assertEquals(plain.uppercase(), "KHOOR! BRVKLNR".shift26(23))
         assertEquals(plain.uppercase(), "KHOOR! BRVKLNR".shift26(-3))
         val encrypt = "PELCGBTENCUL"
@@ -33,10 +34,10 @@ class ClassicalTest {
         val rot13 =
             "introvert at NSA? Va gur ryringbef," + "gur rkgebireg ybbxf ng gur BGURE thl'f fubrf. "
         assertEquals(
-            "VAGEBIREG NG AFN? IN THE ELEVATORS,THE EXTROVERT LOOKS AT THE OTHER GUY'S SHOES. ",
+            "vagebireg ng AFN? In the elevators,the extrovert looks at the OTHER guy's shoes. ",
             rot13.shift26(13)
         )
-        assertEquals(rot13.uppercase(), rot13.shift26(13).shift26(13))
+        assertEquals(rot13, rot13.shift26(13).shift26(13))
 
         val rot47 = "The Quick Brown Fox Jumps Over The Lazy Dog."
         assertEquals("%96 \"F:4< qC@H? u@I yF>AD ~G6C %96 {2KJ s@8]", rot47.shift94(47))
@@ -46,29 +47,47 @@ class ClassicalTest {
         assertEquals("123sb", "123sb".shift10(5).shift10(5))
 
         assertEquals("678fo", "123sb".rot18())
+        assertEquals("678fO", "123sB".rot18())
         assertEquals("123sb", "123sb".rot18().rot18())
     }
 
     @Test
     fun affine() {
-        "AFFINECIPHER".affineEncrypt(5, 8).also {
-            assertEquals("IHHWVCSWFRCP", it)
-            assertEquals("AFFINECIPHER", it.affineDecrypt(5, 8))
+        "AffineCipher".affineEncrypt(5, 8).also {
+            assertEquals("IhhwvcSwfrcp", it)
+            assertEquals("AffineCipher", it.affineDecrypt(5, 8))
+        }
+
+        "aoxL{XaaHKP_tHgwpc_hN_ToXnnht}".affineDecrypt(37, 23, TABLE_A_Z_LOWER + TABLE_A_Z).also {
+            println(it)
+        }
+        "flaG(AffINE_cIpher_iS_ClAssic}".affineEncrypt(37, 23, TABLE_A_Z_LOWER + TABLE_A_Z).also {
+            println(it)
         }
     }
 
     @Test
     fun vig() {
-        "ATTACKATDAWN".virgeneneEncode("LEMONLEMONLE").also { println(it) }
-        "CRYPTO IS SHORT FOR CRYPTOGRAPHY".virgeneneEncode("LEON").also { println(it) }
-        "LXFOPVEFRNHR".virgeneneDecode("LEMONLEMONLE").also { println(it) }
+        val key = "LEMONLEMONLE"
+        "ATTACKATDAWN".virgeneneEncode(key).also {
+            assertEquals("LXFOPVEFRNHR", it)
+            assertEquals("ATTACKATDAWN", it.virgeneneDecode(key))
+        }
+        "ATTACK AT DAWN".virgeneneEncode(key).also {
+            assertEquals("LXFOPV EF RNHR", it)
+            assertEquals("ATTACK AT DAWN", it.virgeneneDecode(key))
+        }
+        "AttackAtDawn".virgeneneEncode(key).also {
+            assertEquals("LxfopvEfRnhr", it)
+            assertEquals("AttackAtDawn", it.virgeneneDecode(key))
+        }
     }
 
     @Test
     fun atbash() {
         "Hello".atBash().also {
-            assertEquals("SVOOL", it)
-            assertEquals("Hello".uppercase(), it.atBash())
+            assertEquals("Svool", it)
+            assertEquals("Hello", it.atBash())
         }
     }
 
@@ -98,6 +117,17 @@ class ClassicalTest {
     }
 
     @Test
+    fun tapeCode() {
+        val msg = "water"
+        val tapCode = "••••• ••   • •   •••• ••••   • •••••   •••• ••"
+        val encrypted = "5211441542"
+
+        assertEquals(encrypted, msg.tapCode())
+        assertEquals(msg.uppercase(), encrypted.tapCodeDecrypt())
+        assertEquals(msg.uppercase(), tapCode.tapCodeDecrypt())
+    }
+
+    @Test
     fun bacon() {
         val msg = "Leon 406 Hello"
         var encrypted = "ABABAAABAAABBABABBAA 406 AABBBAABAAABABAABABAABBAB"
@@ -120,17 +150,23 @@ class ClassicalTest {
 
     @Test
     fun qwe() {
-        assertEquals("Hello Leon".stripAllSpace().uppercase(), "ITSSGSTGF".qweDecrypt())
-        assertEquals("ITSSGSTGF", "Hello Leon".qweEncrypt())
+        assertEquals("Hello Leon".stripAllSpace(), "ItssgStgf".qweDecrypt())
+        assertEquals("ItssgStgf", "Hello Leon".qweEncrypt())
     }
 
     @Test
     fun railFence() {
         val msg = "ATTACKATDAWN"
-        val encrypt = "AKWTANTT@AD@CA@"
+        val encrypt = "AKWTANTTADCA"
+
         val count = 5
+
         assertEquals(encrypt, msg.railFenceEncrypt(count))
-        assertEquals(msg, encrypt.railFenceDecrypt(5))
+        assertEquals(msg, encrypt.railFenceDecrypt(count))
+        (2 until msg.length).forEach {
+            println(it)
+            assertEquals(msg, msg.railFenceEncrypt(it).railFenceDecrypt(it))
+        }
     }
 
     @Test
@@ -139,7 +175,6 @@ class ClassicalTest {
         val encrypt = "ACDTAKTANTAW"
         assertEquals(encrypt, msg.railFenceWEncrypt(3))
         assertEquals(msg, encrypt.railFenceWDecrypt(3))
-        println(msg.railFenceWEncrypt(3, 1))
         assertEquals("ATNATCADWTKA", msg.railFenceWEncrypt(3, 1))
         assertEquals(msg, "ATNATCADWTKA".railFenceWDecrypt(3, 1))
     }
@@ -174,7 +209,6 @@ class ClassicalTest {
         val key = "QUEENLY"
         val encrypt = "QNXEPV YT WTWP"
         // 它的密钥开头是一个关键词，之后则是明文的重复
-        println(msg.autoKey(key))
         assertEquals(encrypt, msg.autoKey(key))
         assertEquals(msg, encrypt.autoKeyDecrypt(key))
         assertEquals(encrypt.stripAllSpace(), msg.autoKey(key).stripAllSpace())
@@ -185,17 +219,21 @@ class ClassicalTest {
     fun playFair() {
         val key = "playfair example".replace(" ", "")
         val msg = "Hide the gold in the tree stump"
-        val encrypted = "BM OD ZB XD NA BE KU DM UI MX MO VU IF"
-        assertEquals(encrypted, msg.playFair(key))
+        val encrypted = "BM OD ZB XD NA BE KU DM UI XM MO UV IF"
+        val encrypted2 = "Bm od zb xd na be ku dm ui Xm mo uv if"
+
+        assertEquals(encrypted, msg.playFair(key).uppercase())
+        assertEquals(encrypted2, msg.playFair(key))
         assertEquals(msg.uppercase().stripAllSpace(), encrypted.playFairDecrypt(key))
+        assertEquals(msg.stripAllSpace(), encrypted2.playFairDecrypt(key))
     }
 
     @Test
     fun nihiList() {
-        "I am leon thank you for using my software".nihilist("helloworld").also { println(it) }
-        "33 2335 13121441 4511234134 541451 311421 5144334132 3554 4414314515232112"
-            .nihilistDecrypt("helloworld")
-            .also { println(it) }
+        val data = "I am leon thank you for using my software"
+        val encoded = "33 2335 13121441 4511234134 541451 311421 5144334132 3554 4414314515232112"
+        assertEquals(encoded, data.nihilist("helloworld"))
+        assertEquals(data.uppercase(), encoded.nihilistDecrypt("helloworld"))
     }
 
     @Test
@@ -218,18 +256,9 @@ class ClassicalTest {
     @Test
     fun gray() {
         val data = "graycode加密"
-        data.grayEncode().also {
-            println(it)
-            assertEquals(data, it.grayDecode())
-        }
-        data.grayEncode(4).also {
-            println(it)
-            assertEquals(data, it.grayDecode(4))
-        }
-        data.grayEncode(5).also {
-            println(it)
-            assertEquals(data, it.grayDecode(5))
-        }
+        data.grayEncode().also { assertEquals(data, it.grayDecode()) }
+        data.grayEncode(4).also { assertEquals(data, it.grayDecode(4)) }
+        data.grayEncode(5).also { assertEquals(data, it.grayDecode(5)) }
     }
 
     @Test
@@ -258,6 +287,24 @@ class ClassicalTest {
 
         assertEquals(encrypted, data.hillEncrypt(key, fromZero = false))
         assertEquals(data, encrypted.hillDecrypt(key, fromZero = false))
+    }
+
+    @Test
+    fun hillCrack() {
+        //        val key = "13 6 3 21"
+        val data = "dloguszijluswogany".replace("[^a-zA-Z]".toRegex(), "")
+        var decrypt = ""
+        val flag = "flag"
+        val range = 0..25
+        label@ for (k1 in range) {
+            for (k2 in range) for (k3 in range) for (k4 in range) {
+                runCatching { decrypt = data.hillDecrypt("$k1 $k2 $k3 $k4", fromZero = false) }
+                if (decrypt.startsWith(flag, true)) {
+                    println("$k1 $k2 $k3 $k4 $decrypt")
+                    //                            break@label
+                }
+            }
+        }
     }
 
     @Test

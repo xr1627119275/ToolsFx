@@ -5,8 +5,9 @@ import kotlin.math.sqrt
 
 fun Array<IntArray>.determinant(n: Int): Int {
     var res: Int
-    if (n == 1) res = this[0][0]
-    else if (n == 2) {
+    if (n == 1) {
+        res = this[0][0]
+    } else if (n == 2) {
         res = this[0][0] * this[1][1] - this[1][0] * this[0][1]
     } else {
         res = 0
@@ -26,12 +27,10 @@ fun Array<IntArray>.determinant(n: Int): Int {
     return res
 }
 
-fun List<Int>.reshape(dimension: Int) =
-    if (sqrt(this.size.toDouble()) == dimension.toDouble()) {
-        chunked(dimension).map { it.toIntArray() }.toTypedArray()
-    } else {
-        throw IllegalArgumentException("wrong dimension or list")
-    }
+fun List<Int>.reshape(dimension: Int): Array<IntArray> {
+    require(sqrt(this.size.toDouble()) == dimension.toDouble()) { "wrong dimension or list" }
+    return chunked(dimension).map { it.toIntArray() }.toTypedArray()
+}
 
 /** 乘法模逆元 3*9 == 1 mod 26 3 9的互为关于26的模逆元 */
 fun Int.modInverse(modular: Int = 26): Int {
@@ -46,14 +45,9 @@ fun Int.modInverse(modular: Int = 26): Int {
 
 /** 乘法取余 矩阵乘以 矢量 */
 fun Array<IntArray>.multMod(col: IntArray, modular: Int): IntArray {
-    return if (this[0].size == col.size) {
-        this.foldIndexed(IntArray(col.size)) { i, acc, ints ->
-            acc.apply {
-                acc[i] = ints.foldIndexed(0) { j, acc2, int -> acc2 + int * col[j] } % modular
-            }
-        }
-    } else {
-        throw IllegalArgumentException("col size must be matrix's row")
+    require(this[0].size == col.size) { "col size must be matrix's row" }
+    return this.foldIndexed(IntArray(col.size)) { i, acc, ints ->
+        acc.apply { acc[i] = ints.foldIndexed(0) { j, acc2, int -> acc2 + int * col[j] } % modular }
     }
 }
 
@@ -102,8 +96,9 @@ fun Array<IntArray>.invertModMatrix(modular: Int = 26): Array<IntArray> {
                     b[i][j] = 0
                     if (i != q && j != p) {
                         b[m][n] = this[i][j]
-                        if (n < size - 2) n++
-                        else {
+                        if (n < size - 2) {
+                            n++
+                        } else {
                             n = 0
                             m++
                         }

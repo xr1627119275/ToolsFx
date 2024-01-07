@@ -1,14 +1,22 @@
 package me.leon
 
-import hash.argon2.Argon2PasswordEncoder
-import hash.bcrypt.BCryptPasswordEncoder
-import hash.password.*
-import hash.scrypt.SCryptPasswordEncoder
+import java.io.File
+import java.math.BigInteger
 import java.security.Security
+import javassist.ClassPool
+import javassist.CtField
+import kotlin.system.measureTimeMillis
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import me.leon.ext.crypto.EncodeType
+import me.leon.ext.math.eulerPhi
+import me.leon.hash.argon2.Argon2PasswordEncoder
+import me.leon.hash.bcrypt.BCryptPasswordEncoder
+import me.leon.hash.password.*
+import me.leon.hash.scrypt.SCryptPasswordEncoder
 import org.bouncycastle.crypto.params.Argon2Parameters
 import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.junit.Ignore
 import org.junit.Test
 
 class Tmp {
@@ -39,6 +47,7 @@ class Tmp {
     }
 
     @Test
+    @Ignore
     fun digest() {
         val salt = "12345678".toByteArray()
         // salt在前面
@@ -86,10 +95,11 @@ class Tmp {
     }
 
     @Test
+    @Ignore
     fun bcrypt() {
         val salt = "123456123456123456123456".toByteArray()
         BCryptPasswordEncoder().apply {
-            println(encode("123"))
+            println(encode("Aa123456"))
             //            println(encode("123", salt))
 
             assertTrue { matches("123", encode("123")) }
@@ -102,7 +112,11 @@ class Tmp {
 
             strength = 12
             println(encode("123"))
-            assertTrue { matches("123", encode("123")) }
+            measureTimeMillis { assertTrue { matches("123", encode("123")) } }.also { println(it) }
+            strength = 14
+            measureTimeMillis { assertTrue { matches("123", encode("123")) } }.also { println(it) }
+            strength = 16
+            measureTimeMillis { assertTrue { matches("123", encode("123")) } }.also { println(it) }
             version = BCryptPasswordEncoder.BCryptVersion.`$2Y`
 
             println(encode("123"))
@@ -152,5 +166,84 @@ class Tmp {
     @Test
     fun big() {
         "12".toBigInteger().toString(16).also { println(it) }
+        println(EncodeType.values().joinToString(" "))
+    }
+
+    @Test
+    fun phi() {
+        val list =
+            mutableListOf(
+                    "2",
+                    "9857",
+                    "80990192745708230644342256236014173435685606613945005625896333595456890957431",
+                    "80990192745708230644342256236014173435685606613945005625896333595456890957431",
+                    "80990192745708230644342256236014173435685606613945005625896333595456890957431",
+                    "107843756547496736191228190917322558471918750590609940965721119253640998815543",
+                    "107843756547496736191228190917322558471918750590609940965721119253640998815543"
+                )
+                .map { it.toBigInteger() }
+
+        //        list.fold(list.product()) { acc, bigInteger ->
+        //            println(acc )
+        //            acc - acc / bigInteger
+        //        }.also { println(it) }
+        list
+            .groupBy { it }
+            .map { it.key to it.value.size }
+            .fold(BigInteger.ONE) { acc, pair -> acc * pair.first.eulerPhi(pair.second) }
+            .also { println(it) }
+    }
+
+    @Test
+    fun assist() {
+        val buildDir = "build"
+        val file = File(buildDir, "classes/kotlin/main")
+        println(file.absolutePath)
+        val clazz = File(file.absolutePath, "me/leon/BuildConfig.class")
+        clazz.parentFile.mkdirs()
+
+        println("file $clazz  ${clazz.exists()}")
+        val pool = ClassPool.getDefault()
+
+        val ctClass = pool.makeClass("me.leon.BuildConfig")
+        ctClass.addField(CtField.make("int HEIGHT = 6;", ctClass))
+        ctClass.addField(CtField.make("public static int HEIGHT2 = 6;", ctClass))
+        ctClass.writeFile(file.absolutePath)
+    }
+
+    @Test
+    @Ignore
+    fun assistModify() {
+        val buildDir = "build"
+        val file = File(buildDir, "classes/kotlin/main")
+        val clazz = File(file.absolutePath, "me/leon/ConfigKt.class")
+
+        println("file $clazz  ${clazz.exists()}")
+        val pool = ClassPool.getDefault()
+        val ctClass = pool.get("me.leon.ConfigKt")
+        var versionField = ctClass.getDeclaredField("VERSION")
+        println(versionField.constantValue)
+        var dateField = ctClass.getDeclaredField("BUILD_DATE")
+        println(dateField.constantValue)
+        modifyField(
+            dateField,
+            "public static final java.lang.String BUILD_DATE =\"" + "2022" + "\";"
+        )
+        modifyField(
+            versionField,
+            "public static final java.lang.String VERSION =\"" + "1.15.6" + "\";"
+        )
+        dateField = ctClass.getDeclaredField("BUILD_DATE")
+        versionField = ctClass.getDeclaredField("VERSION")
+        println(dateField.constantValue)
+        println(versionField.constantValue)
+        ctClass.writeFile(file.absolutePath)
+    }
+
+    private fun modifyField(field: CtField, src: String) {
+        println(src)
+        val ctClass = field.declaringClass
+        ctClass.removeField(field)
+        ctClass.addField(CtField.make(src, ctClass))
     }
 }

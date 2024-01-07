@@ -1,15 +1,15 @@
 package me.leon.encode
 
 import java.nio.charset.Charset
+import me.leon.UTF8
 import me.leon.ext.hex2String
 import me.leon.ext.toHex
 
 object QuotePrintable {
 
-    fun encode(src: String, charset: String = "UTF-8") =
-        src
-            .also { println("encode $src $charset") }
-            .toCharArray()
+    fun encode(src: String, charset: String = UTF8) =
+        src.also { println("encode $src $charset") }
+            .asIterable()
             .map {
                 when (it.code) {
                     in 33..60 -> it
@@ -17,8 +17,7 @@ object QuotePrintable {
                     in 0..15 -> "=0${it.code.toString(16)}"
                     in 128..255 -> "=${it.code.toString(16)}"
                     else ->
-                        it
-                            .toString()
+                        it.toString()
                             .toByteArray(Charset.forName(charset))
                             .toHex()
                             .chunked(2)
@@ -29,7 +28,7 @@ object QuotePrintable {
             .chunked(75)
             .joinToString("=\r\n")
 
-    fun decode(src: String, charset: String = "UTF-8"): String {
+    fun decode(src: String, charset: String = UTF8): String {
         val preHandle = src.lowercase().split("=(?:\r\n|\n)".toRegex()).joinToString("")
         val sb = StringBuilder()
         val hex = StringBuilder()
@@ -43,7 +42,7 @@ object QuotePrintable {
             } else if (curPos == lastPos) {
                 hex.append(preHandle.subSequence(lastPos + 1, lastPos + 3))
                 lastPos += 3
-                while (preHandle[lastPos] == '=') {
+                while (lastPos < preHandle.length && preHandle[lastPos] == '=') {
                     hex.append(preHandle.subSequence(lastPos + 1, lastPos + 3))
                     lastPos += 3
                 }

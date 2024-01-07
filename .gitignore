@@ -3,7 +3,11 @@
 build/
 /.idea
 out/
-/ToolsFx.properties
-/local.properties
-/tools/toMerged/
+ToolsFx.properties
+local.properties
+/tools/*/
 dict/
+*.json
+downloads/
+.DS_store
+vocabulary/

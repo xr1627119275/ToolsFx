@@ -14,8 +14,8 @@ interface CLibrary : Library {
 
     companion object {
         val INSTANCE =
-            Native.load(if (Platform.isWindows()) "msvcrt" else "c", CLibrary::class.java) as
-                CLibrary
+            Native.load(if (Platform.isWindows()) "msvcrt" else "c", CLibrary::class.java)
+                as CLibrary
     }
 }
 
@@ -32,6 +32,7 @@ class JniTest {
         val args = listOf("a", "b", "c")
         args.forEachIndexed { i, s -> CLibrary.INSTANCE.printf("Argument %d: %s\n", i, s) }
     }
+
     @Test
     fun kernel32() {
         val lib = Native.load("kernel32", Kernel32::class.java) as Kernel32

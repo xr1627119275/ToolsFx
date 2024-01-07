@@ -81,15 +81,16 @@ val figureEncodeMap = figureDecodeDict.entries.associate { it.value to it.key }
 
 fun String.baudot(): String {
     var isLetter = true
-    return toCharArray().joinToString(" ") {
-        if (isLetter)
+    return asIterable().joinToString(" ") {
+        if (isLetter) {
             letterEncodeMap[it.toString().uppercase()]
                 ?: (FIGURE + " " + figureEncodeMap[it.toString()]).also { isLetter = false }
-        else
+        } else {
             figureEncodeMap[it.toString()]
                 ?: (LETTER + " " + letterEncodeMap[it.toString().uppercase()]).also {
                     isLetter = true
                 }
+        }
     }
 }
 
@@ -102,7 +103,13 @@ fun String.baudotDecode(): String {
             if (it == LETTER || it == FIGURE) {
                 isLetter = it == LETTER
                 ""
-            } else (if (isLetter) letterDecodeDict[it] else figureDecodeDict[it])
+            } else {
+                if (isLetter) {
+                    letterDecodeDict[it]
+                } else {
+                    figureDecodeDict[it]
+                }
+            }
         }
         .joinToString("")
         .lowercase()

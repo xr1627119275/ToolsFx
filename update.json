@@ -1,22 +1,22 @@
-{"version":"1.13.0","info":"1.13.0
+{"version":"1.17.0","info":"1.17.0 2023-09-20, 喜迎 JDK 21 LTS
 
-🔥 add radix8, radix10, radix32
-🔥 内嵌浏览器支持系统浏览器打开,美化UI
-🔥 新增hash字典爆破,可配置多个字典
-🔥 编码支持一键爆破/hash支持base64编码
-🔥 add ECC calculator
-🔥 support input AEAD associated data
-🔥 签名支持hex密钥,RSA签名额外支持n e d参数
-🔥 RSA密钥支持hex/base64/n e d参数自动识别
-🔥 SM2非对称加密结果模式改为国标C1C3C2,支持密钥Q,D加解密
-🔥 RSA支持padding选择,新增Skein-256-128
-🔥 新增SM2,ElGamal
-🔥 对称加密新增VMPC-KSA3/Shacal2/GOST28147/GOST3412-2015/Noekeon
-🔥 新增bc 1.71 hash/mac算法
-🔥 称加密新增VMPC-KSA3/Shacal2/GOST28147/GOST3412-2015/Noekeon
+新功能
 
-🐞 pcMoe x-token过期
-🐞 radix64 decode issue
-🐞 大数开根精度丢失
-🐞 base64Url编码包含=
+  🔥 StringProcess 加入tts功能
+  🔥 哈希加入各种CRC算法
+  🔥 ChaCha20-Poly1305 support AAD
+  🔥 新增最小化到系统托盘
+  🔥 Misc加入 DNS host解析,Endia,MIME解析,githubMirror
+  🔥 Misc加入 shorten url,Unit Convert,繁简体转换, 翻译
+  🔥 Signature JWT优化HMAC输入秘钥显示
+  🔥 CTF与佛论禅新增加密版本, 优化零宽显示结果
+  🔥 其他优化 =详见Changelog.md
+
+
+
+使用前请看README和wiki
+
+github项目已开通打赏(sponsor)入口,
+感谢  naonaonao师傅 大力支持！
+
   "}

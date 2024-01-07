@@ -15,6 +15,16 @@ fun String.paramsParse() =
         }
     }
 
+fun String.cookieParse() =
+    split("; *".toRegex()).fold(mutableMapOf<String, Any>()) { acc, param ->
+        acc.apply {
+            if (param.isNotEmpty()) {
+                val (key, value) = param.split("=")
+                acc[key] = value
+            }
+        }
+    }
+
 fun String.parseCurl() =
     trim()
         // 去掉浏览器多余的分割符
@@ -33,19 +43,21 @@ fun String.parseCurl() =
                             ("POST".takeIf { acc.method == "GET" } ?: acc.method).also {
                                 val value = s.removeFirstAndEndQuotes(3)
                                 if (value.contains("@file")) {
-                                    if (value.startsWith("{") || value.startsWith("["))
+                                    if (value.startsWith("{") || value.startsWith("[")) {
                                         acc.params.putAll(
-                                            value.fromJson(MutableMap::class.java) as
-                                                Map<out String, Any>
+                                            value.fromJson(MutableMap::class.java)
+                                                as Map<out String, Any>
                                         )
-                                    else acc.params.putAll(value.paramsParse().also { println(it) })
-                                } else if (this@parseCurl.contains(
-                                        "Content-Type: application/json",
-                                        true
-                                    )
-                                )
+                                    } else {
+                                        acc.params.putAll(value.paramsParse().also { println(it) })
+                                    }
+                                } else if (
+                                    this@parseCurl.contains("Content-Type: application/json", true)
+                                ) {
                                     acc.rawBody = value
-                                else acc.params.putAll(value.paramsParse())
+                                } else {
+                                    acc.params.putAll(value.paramsParse())
+                                }
                             }
                     s.startsWith("--data-binary") ->
                         acc.method =
@@ -58,22 +70,22 @@ fun String.parseCurl() =
                                 val value = s.removeFirstAndEndQuotes(7)
                                 if (value.contains("@file")) {
                                     acc.params.putAll(
-                                        value.fromJson(MutableMap::class.java) as
-                                            Map<out String, Any>
+                                        value.fromJson(MutableMap::class.java)
+                                            as Map<out String, Any>
                                     )
-                                } else if (this@parseCurl.contains(
-                                        "Content-Type: application/json",
-                                        true
-                                    )
-                                )
+                                } else if (
+                                    this@parseCurl.contains("Content-Type: application/json", true)
+                                ) {
                                     acc.rawBody = value
-                                else acc.params.putAll(value.paramsParse())
+                                } else {
+                                    acc.params.putAll(value.paramsParse())
+                                }
                             }
                     s.startsWith("-H") ->
                         with(s.removeFirstAndEndQuotes(3)) {
-                            acc.headers.put(substringBefore(":"), substringAfter(":").trim())
+                            acc.headers[substringBefore(":")] = substringAfter(":").trim()
                         }
-                    else -> ""
+                    else -> {}
                 }
             }
         }
@@ -95,8 +107,11 @@ fun Request.toCurl(): String =
             if (fileParamName.isNotEmpty()) params[fileParamName] = "@file"
             val data =
                 if (isJson) params.toJson() else if (method != "GET") params.toParams() else ""
-            if (rawBody.isNotEmpty()) it.append("--data-raw $rawBody")
-            else if (data.isNotEmpty()) it.append("-d \"${data.replace("\"", "\\\"")}\"")
+            if (rawBody.isNotEmpty()) {
+                it.append("--data-raw $rawBody")
+            } else if (data.isNotEmpty()) {
+                it.append("-d \"${data.replace("\"", "\\\"")}\"")
+            }
         }
         .toString()
 

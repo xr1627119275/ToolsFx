@@ -1,9 +1,16 @@
 package me.leon.asymmetric
 
-import java.security.Security
+import java.io.File
+import java.security.*
+import java.util.Base64
+import javax.crypto.Cipher
+import javax.crypto.spec.DHParameterSpec
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import me.leon.TEST_ASYMMETRIC_DIR
+import me.leon.controller.AsymmetricCryptoController
 import me.leon.encode.base.base64
+import me.leon.encode.base.base64Decode
 import me.leon.ext.crypto.*
 import me.leon.ext.hex2ByteArray
 import me.leon.ext.toHex
@@ -18,7 +25,7 @@ class AsymmetricTest {
         Security.addProvider(BouncyCastleProvider())
     }
 
-    val pri =
+    val pri8 =
         "MIICdwIBADANBgkqhkiG9w0BAQEFAASCAmEwggJdAgEAAoGBAI4PFaNoiyF51e4v63d4okNnf1URlT+j8JwHR1wRka5LK9" +
             "Rx+hAT8AMvjwpYECS8SEFxz9QKqQHf91NcMklyDvX5s2wHiWAu+KCsfBw0eW5K7WhED6MuiSGkWNVP8kAUvXFHL" +
             "1hZwH0qjpkqwGs3kmUigkVAfmD3hR84ulFUp82BAgMBAAECgYAb0bRpFbX5TkSoqlWwRb1w+bmjzRevKMmbpIlC" +
@@ -30,6 +37,9 @@ class AsymmetricTest {
             "8eX5dK3q7wANcxEzwJhN90CJTJeO8qzHPn0ph3pVwOm4ZeVGBJoijxx8CQAfYcZWIuAQvpeP890BaKehYWPZe/5" +
             "Ch83wJXjKzJnyKByaXA58wLmWJu0mkb8NmLeqEEZzujT0I8xnVRwXHT68="
 
+    val pub = File(TEST_ASYMMETRIC_DIR, "pub_2048_pkcs1.pem").readText()
+    val pri = File(TEST_ASYMMETRIC_DIR, "pri_2048_pkcs1.pem").readText()
+
     @Test
     fun rsaKey() {
 
@@ -38,10 +48,63 @@ class AsymmetricTest {
             checkKeyPair(it[0], it[1])
         }
 
-        pkcs8ToPkcs1(pri).also {
+        pkcs8ToPkcs1(pri8).also {
             println(it)
-            pkcs1ToPkcs8(it).also { assertEquals(pri, it) }
+            pkcs1ToPkcs8(it).also { assertEquals(pri8, it) }
         }
+    }
+
+    /**
+     * OAEP MGF1<br/> bouncy castle MGF1 算法默认 SHA256<br/> Oracle MGF1 算法默认 SHA1<br/> python
+     * pycryptodome 算法默认与hash算法一致
+     */
+    @Test
+    fun rsaOaepTest() {
+        val msg = "价大放送胜多负少东方闪电收到否价大价大价大价大价大价大价11".toByteArray()
+        println(msg.size)
+
+        val alg = "RSA/NONE/OAEPWithSHA1AndMGF1Padding"
+
+        val encryptionCipher = Cipher.getInstance(alg)
+
+        val publicKey = pub.toPublicKey("RSA")
+        encryptionCipher.init(Cipher.ENCRYPT_MODE, publicKey, OAEP_PARAM_SPEC_SHA1)
+        val encrypted = encryptionCipher.doFinal(msg).base64()
+        println(encrypted)
+
+        val decryptCipher = Cipher.getInstance(alg, "BC")
+        decryptCipher.init(Cipher.DECRYPT_MODE, pri.toPrivateKey(alg), OAEP_PARAM_SPEC_SHA1)
+        println(decryptCipher.doFinal(encrypted.base64Decode()).decodeToString())
+    }
+
+    @Test
+    fun controllerTest() {
+        val controller = AsymmetricCryptoController()
+        val key = File(TEST_ASYMMETRIC_DIR, "rsa_oaep_sha1.txt").readText()
+        val ss =
+            "CQGd9sC/h9lnLpua50/071knSsP4N8WdmRsjoNIdfclrBhMjp7NoM5xy2SlNLLC2yh7wbRw08nwjo6UF4tmGKKfcjP" +
+                "cb4l4bFa5uvyMY1nJBvmqQylDbiCnsODjhpB1BJfdpU1LUKtwsCxbc7fPL/zzUdWgO+of/R9WmM+QOBPag" +
+                "TANbJo0mpDYxvNKRjvac9Bw4CQTTh87moqsNRSE/Ik5tV2pkFRZfQxAZWuVePsHp0RXVitHwvKzwmN9vMq" +
+                "Gm57Wb2Sto64db4gLJDh9GROQN+EQh3yLoSS8NNtBrZCDddzfKHa8wv6zN/5znvBstsDBkGyi88NzQxw9" +
+                "kOGjCWtwpRw=="
+        val alg2 = "RSA/NONE/OAEP"
+        assertEquals(
+            "EKO{classic_rsa_challenge_is_boring_but_necessary}",
+            controller.priDecrypt(key, alg2, ss)
+        )
+
+        assertEquals(2048, controller.lengthFromPub(pub))
+        assertEquals(2048, controller.lengthFromPri(pri))
+        val plain = "text dfsd dfsdf  dfsdf df sdf  dsf "
+
+        RSA_PADDINGS.map { "RSA/NONE/$it" }
+            .forEach {
+                runCatching {
+                    println("alg : $it")
+                    val encrypt = controller.pubEncrypt(pub, it, plain)
+                    assertEquals(plain, controller.priDecrypt(pri, it, encrypt))
+                }
+            }
     }
 
     @Test
@@ -49,12 +112,12 @@ class AsymmetricTest {
         var alg = "SM2"
         genBase64KeyArray(alg, emptyList()).also {
             println(it.joinToString("\n"))
-            checkKeyPair(it[0], it[1], alg)
+            assertTrue { checkKeyPair(it[0], it[1], alg) }
         }
         alg = "ElGamal"
-        genBase64KeyArray(alg, listOf(1024)).also {
+        genBase64KeyArray(alg, listOf(512)).also {
             println(it.joinToString("\n"))
-            checkKeyPair(it[0], it[1], alg)
+            assertTrue { checkKeyPair(it[0], it[1], alg) }
         }
     }
 
@@ -89,12 +152,15 @@ class AsymmetricTest {
             println(it.base64())
             it.asymmetricDecrypt(priKey, "SM2").also { println(it.decodeToString()) }
         }
-
-        //        "".toByteArray().rsaEncrypt()
     }
 
     @Test
     fun deriveAndMatch() {
+        genBase64KeyArray("RSA", 2048).also {
+            println(it.joinToString("\n"))
+            assertTrue { checkKeyPair(it[0], it[1]) }
+        }
+
         pri.privateKeyDerivedPublicKey().run { assertTrue { checkKeyPair(this, pri) } }
     }
 
@@ -110,11 +176,44 @@ class AsymmetricTest {
         println(changeC1C3C2ToC1C2C3(c1c3c2.hex2ByteArray()).toHex())
     }
 
-    /**
-     * bc加解密使用旧标c1||c2||c3，此方法在加密后调用，将结果转化为c1||c3||c2
-     * @param c1c2c3
-     * @return
-     */
+    @Test
+    fun elGamal() {
+        val keySize = 512
+        val alg = "ElGamal"
+        val str = "ElGamal密码交换算法"
+
+        Security.addProvider(BouncyCastleProvider())
+        val apg: AlgorithmParameterGenerator = AlgorithmParameterGenerator.getInstance(alg)
+        apg.init(keySize)
+        val params: AlgorithmParameters = apg.generateParameters()
+        val elParams = params.getParameterSpec(DHParameterSpec::class.java)
+        val kpg = KeyPairGenerator.getInstance(alg)
+        kpg.initialize(elParams, SecureRandom())
+
+        val keyPair = kpg.generateKeyPair()
+        println("公钥：" + Base64.getEncoder().encodeToString(keyPair.public.encoded))
+        println("私钥：" + Base64.getEncoder().encodeToString(keyPair.private.encoded))
+        println("=============密钥对构造完毕，接收方将公钥公布给发送方=============")
+
+        println("原文：$str")
+        println("=============发送方还原接收方公钥，并使用公钥对数据进行加密=============")
+
+        val kp = genKeyPair(alg, listOf(keySize))
+        // 数据加密
+        var cipher = Cipher.getInstance(alg)
+        cipher.init(Cipher.ENCRYPT_MODE, kp.public)
+        val bytes = cipher.doFinal(str.toByteArray())
+        println("加密后的数据：" + Base64.getEncoder().encodeToString(bytes))
+        println("=============接收方使用私钥对数据进行解密===========")
+
+        // 数据解密
+        cipher = Cipher.getInstance(alg)
+        cipher.init(Cipher.DECRYPT_MODE, kp.private)
+        val bytes1 = cipher.doFinal(bytes)
+        println("解密后的数据：" + bytes1.decodeToString())
+    }
+
+    /** bc加解密使用旧标c1||c2||c3，此方法在加密后调用，将结果转化为c1||c3||c2 */
     private fun changeC1C2C3ToC1C3C2(c1c2c3: ByteArray): ByteArray {
         val c1Len = 65
         val c3Len = 32
@@ -125,11 +224,7 @@ class AsymmetricTest {
         return result
     }
 
-    /**
-     * bc加解密使用旧标c1||c3||c2，此方法在解密前调用，将密文转化为c1||c2||c3再去解密
-     * @param c1c3c2
-     * @return
-     */
+    /** bc加解密使用旧标c1||c3||c2，此方法在解密前调用，将密文转化为c1||c2||c3再去解密 */
     private fun changeC1C3C2ToC1C2C3(c1c3c2: ByteArray): ByteArray {
         val c1Len = 65
         val c3Len = 32

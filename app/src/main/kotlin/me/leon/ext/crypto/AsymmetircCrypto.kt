@@ -4,11 +4,13 @@ import java.io.*
 import java.math.BigInteger
 import java.security.*
 import java.security.cert.CertificateFactory
-import java.security.interfaces.*
+import java.security.interfaces.RSAPrivateCrtKey
 import java.security.spec.*
 import javax.crypto.Cipher
+import javax.crypto.spec.*
 import me.leon.encode.base.*
-import me.leon.ext.*
+import me.leon.ext.hex2ByteArray
+import me.leon.ext.parseRsaParams
 import org.bouncycastle.asn1.ASN1Primitive
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers
@@ -20,9 +22,12 @@ import org.bouncycastle.pqc.crypto.lms.LMSigParameters
 import org.bouncycastle.pqc.jcajce.spec.LMSKeyGenParameterSpec
 import org.bouncycastle.pqc.jcajce.spec.SPHINCSPlusParameterSpec
 
+private const val ELGAMAL = "ElGamal"
+
 val ASYMMETRIC_ALGOS =
     mapOf(
         "RSA" to listOf(512, 1024, 2048, 3072, 4096),
+        // todo
         "ElGamal" to listOf(512, 1024, 2048),
         "SM2" to listOf(256),
     )
@@ -31,18 +36,24 @@ val RSA_PADDINGS =
     listOf(
         "PKCS1Padding",
         "NoPadding",
+        "ISO9796-1Padding",
+        "OAEP",
         "OAEPWithMD5AndMGF1Padding",
         "OAEPWithSHA1AndMGF1Padding",
         "OAEPWithSHA224AndMGF1Padding",
-        "OAEPWithSHA256AndMGF1Padding",
-        "OAEPWithSHA384AndMGF1Padding",
-        "OAEPWithSHA512AndMGF1Padding",
         "OAEPWithSHA3-224AndMGF1Padding",
+        // key 大于512位
+        "OAEPWithSHA256AndMGF1Padding",
         "OAEPWithSHA3-256AndMGF1Padding",
+        "OAEPWithSHA384AndMGF1Padding",
         "OAEPWithSHA3-384AndMGF1Padding",
+        // key 大于1024位
+        "OAEPWithSHA512AndMGF1Padding",
         "OAEPWithSHA3-512AndMGF1Padding",
-        "ISO9796-1Padding",
     )
+
+val OAEP_PARAM_SPEC_SHA1 =
+    OAEPParameterSpec("SHA-1", "MGF1", MGF1ParameterSpec.SHA1, PSource.PSpecified.DEFAULT)
 
 fun String.removePemInfo() =
     replace("---+(?:END|BEGIN) (?:RSA )?\\w+ KEY---+|\n|\r|\r\n".toRegex(), "")
@@ -58,10 +69,6 @@ fun getPropPublicKey(key: String): ByteArray =
         key.removePemInfo().keyAutoDecode()
     }
 
-fun parsePublicKeyFromCerFile(file: String): String {
-    return file.toFile().parsePublicKeyFromCerFile()
-}
-
 fun File.parsePublicKeyFromCerFile(): String {
     return inputStream().use {
         CertificateFactory.getInstance("X.509", "BC")
@@ -72,14 +79,14 @@ fun File.parsePublicKeyFromCerFile(): String {
     }
 }
 
-fun String.toPublicKey(alg: String): PublicKey? {
+fun String.toPublicKey(alg: String): PublicKey? =
     try {
         val keySpec = X509EncodedKeySpec(getPropPublicKey(this))
-        return KeyFactory.getInstance(alg.properKeyPairAlg()).generatePublic(keySpec)
+        KeyFactory.getInstance(alg.properKeyPairAlg()).generatePublic(keySpec)
     } catch (ignore: Exception) {
         if (alg.contains("RSA")) {
             // rsa n e d p 参数解析
-            return with(parseRsaParams()) {
+            with(parseRsaParams()) {
                 KeyFactory.getInstance(alg.properKeyPairAlg())
                     .generatePublic(
                         RSAPublicKeySpec(
@@ -88,92 +95,96 @@ fun String.toPublicKey(alg: String): PublicKey? {
                         )
                     )
             }
+        } else {
+            null
         }
-        return null
     }
-}
 
-fun String.toPrivateKey(alg: String): PrivateKey? {
+fun String.toPrivateKey(alg: String): PrivateKey? =
     try {
         val keySpec = PKCS8EncodedKeySpec(removePemInfo().keyAutoDecode())
-        return KeyFactory.getInstance(alg.properKeyPairAlg()).generatePrivate(keySpec)
+        KeyFactory.getInstance(alg.properKeyPairAlg()).generatePrivate(keySpec)
     } catch (ignore: Exception) {
         if (alg.contains("RSA")) {
-            return with(parseRsaParams()) {
+            with(parseRsaParams()) {
                 KeyFactory.getInstance(alg.properKeyPairAlg())
                     .generatePrivate(RSAPrivateKeySpec(this["n"], this["d"]))
             }
+        } else {
+            null
         }
-        return null
     }
-}
 
 fun ByteArray.pubDecrypt(key: String, alg: String) = pubDecrypt(key.toPublicKey(alg), alg)
 
 fun ByteArray.pubDecrypt(publicKey: PublicKey?, alg: String): ByteArray =
-    Cipher.getInstance(alg).run {
-        init(Cipher.DECRYPT_MODE, publicKey)
-        toList()
+    Cipher.getInstance(alg.properOAEPAlg()).run {
+        if (alg.isOAEP()) {
+            init(Cipher.DECRYPT_MODE, publicKey, OAEP_PARAM_SPEC_SHA1)
+            return@pubDecrypt doFinal(this@pubDecrypt)
+        } else {
+            init(Cipher.DECRYPT_MODE, publicKey)
+        }
+        asIterable()
             .chunked(publicKey!!.bitLength() / BYTE_BITS) { this.doFinal(it.toByteArray()) }
             .fold(ByteArrayOutputStream()) { acc, bytes -> acc.also { acc.write(bytes) } }
             .toByteArray()
     }
 
 fun ByteArray.pubEncrypt(publicKey: PublicKey?, alg: String, reserved: Int = 11): ByteArray {
-    return Cipher.getInstance(alg).run {
-        init(Cipher.ENCRYPT_MODE, publicKey)
-        toList()
-            .chunked(
-                publicKey!!.bitLength() / BYTE_BITS - if (alg.contains("RSA")) reserved else 0
-            ) { this.doFinal(it.toByteArray()) }
-            .fold(ByteArrayOutputStream()) { acc, bytes -> acc.also { acc.write(bytes) } }
-            .toByteArray()
+    return Cipher.getInstance(alg.properOAEPAlg()).run {
+        if (alg.isOAEP()) {
+            init(Cipher.ENCRYPT_MODE, publicKey, OAEP_PARAM_SPEC_SHA1)
+            println("_______isOAEP")
+            //            return@pubEncrypt doFinal(this@pubEncrypt)
+        } else {
+            init(Cipher.ENCRYPT_MODE, publicKey)
+        }
+        println("_______ ${publicKey!!.bitLength()} ${if (alg.contains("RSA")) reserved else 0}")
+        if (alg == ELGAMAL) {
+            doFinal(this@pubEncrypt)
+        } else {
+            asIterable()
+                .chunked(
+                    (publicKey.bitLength() / BYTE_BITS - if (alg.contains("RSA")) reserved else 0)
+                        .also { println("chunk size $it") }
+                ) {
+                    println("list size ${it.size}")
+                    this.doFinal(it.toByteArray())
+                }
+                .fold(ByteArrayOutputStream()) { acc, bytes -> acc.also { acc.write(bytes) } }
+                .toByteArray()
+        }
     }
 }
 
+private fun String.properOAEPAlg() = if (isOAEP()) this.replace("OAEP", RSA_PADDINGS[4]) else this
+
+private fun String.isOAEP() = endsWith("OAEP")
+
 fun ByteArray.pubEncrypt(key: String, alg: String, reserved: Int = 11) =
-    if (alg == "SM2") sm2(true, key.removePemInfo().keyAutoDecode().toECPublicKeyParams())
-    else pubEncrypt(key.toPublicKey(alg), alg, reserved)
-
-val HEX_REGEX = "^[\\da-fA-F]+$".toRegex()
-
-fun String.keyAutoDecode(): ByteArray =
-    if (HEX_REGEX.matches(this)) hex2ByteArray() else base64Decode()
-
-fun ByteArray.asymmetricDecrypt(
-    key: Key?,
-    alg: String,
-): ByteArray =
-    Cipher.getInstance(alg).run {
-        init(Cipher.DECRYPT_MODE, key)
-        val bitLen =
-            when (key) {
-                is PublicKey -> {
-                    key.bitLength()
-                }
-                is PrivateKey -> {
-                    key.bitLength()
-                }
-                else -> {
-                    1024
-                }
-            }
-        toList()
-            .chunked(bitLen / BYTE_BITS) { this.doFinal(it.toByteArray()) }
-            .fold(ByteArrayOutputStream()) { acc, bytes -> acc.also { acc.write(bytes) } }
-            .toByteArray()
+    if (alg == "SM2") {
+        sm2(true, key.removePemInfo().keyAutoDecode().toECPublicKeyParams())
+    } else {
+        pubEncrypt(key.toPublicKey(alg), alg, reserved)
     }
 
-fun ByteArray.privateDecrypt(
-    key: String,
-    alg: String,
-): ByteArray =
-    if (alg == "SM2") sm2(false, key.keyAutoDecode().toECPrivateKeyParams())
-    else asymmetricDecrypt(key.toPrivateKey(alg), alg)
+fun String.keyAutoDecode(): ByteArray =
+    if (HEX_REGEX.matches(this)) {
+        hex2ByteArray()
+    } else {
+        base64Decode()
+    }
 
-fun ByteArray.asymmetricEncrypt(key: Key?, alg: String, reserved: Int = 11): ByteArray =
-    Cipher.getInstance(alg).run {
-        init(Cipher.ENCRYPT_MODE, key)
+fun ByteArray.asymmetricDecrypt(key: Key?, alg: String): ByteArray =
+    Cipher.getInstance(alg.properOAEPAlg()).run {
+        println("alg $alg $key")
+        if (alg.isOAEP()) {
+            init(Cipher.DECRYPT_MODE, key, OAEP_PARAM_SPEC_SHA1)
+            return@asymmetricDecrypt doFinal(this@asymmetricDecrypt)
+        } else {
+            init(Cipher.DECRYPT_MODE, key)
+        }
         val bitLen =
             when (key) {
                 is PublicKey -> {
@@ -186,12 +197,55 @@ fun ByteArray.asymmetricEncrypt(key: Key?, alg: String, reserved: Int = 11): Byt
                     1024
                 }
             }
-        toList()
-            .chunked(bitLen / BYTE_BITS - if (alg.contains("RSA")) reserved else 0) {
-                this.doFinal(it.toByteArray())
+
+        println(bitLen)
+        if (alg == ELGAMAL) {
+            doFinal(this@asymmetricDecrypt)
+        } else {
+            asIterable()
+                .chunked(bitLen / BYTE_BITS) { this.doFinal(it.toByteArray()) }
+                .fold(ByteArrayOutputStream()) { acc, bytes -> acc.also { acc.write(bytes) } }
+                .toByteArray()
+        }
+    }
+
+fun ByteArray.privateDecrypt(key: String, alg: String): ByteArray =
+    if (alg == "SM2") {
+        sm2(false, key.keyAutoDecode().toECPrivateKeyParams())
+    } else {
+        asymmetricDecrypt(key.toPrivateKey(alg), alg)
+    }
+
+fun ByteArray.asymmetricEncrypt(key: Key?, alg: String, reserved: Int = 11): ByteArray =
+    Cipher.getInstance(alg.properOAEPAlg()).run {
+        if (alg.isOAEP()) {
+            init(Cipher.ENCRYPT_MODE, key, OAEP_PARAM_SPEC_SHA1)
+        } else {
+            init(Cipher.ENCRYPT_MODE, key)
+        }
+        val bitLen =
+            when (key) {
+                is PublicKey -> {
+                    key.bitLength()
+                }
+                is PrivateKey -> {
+                    key.bitLength()
+                }
+                else -> {
+                    1024
+                }
             }
-            .fold(ByteArrayOutputStream()) { acc, bytes -> acc.also { acc.write(bytes) } }
-            .toByteArray()
+
+        if (alg == ELGAMAL) {
+            doFinal(this@asymmetricEncrypt)
+        } else {
+            asIterable()
+                .chunked(bitLen / BYTE_BITS - if (alg.contains("RSA")) reserved else 0) {
+                    this.doFinal(it.toByteArray())
+                }
+                .fold(ByteArrayOutputStream()) { acc, bytes -> acc.also { acc.write(bytes) } }
+                .toByteArray()
+        }
     }
 
 fun ByteArray.privateEncrypt(key: String, alg: String, reserved: Int = 11): ByteArray =
@@ -241,6 +295,14 @@ fun genKeyPair(alg: String, params: List<Any> = emptyList()): KeyPair =
                         params[1] as LMOtsParameters
                     )
                 )
+            alg == ELGAMAL -> {
+                val apg: AlgorithmParameterGenerator = AlgorithmParameterGenerator.getInstance(alg)
+                apg.init(params[0] as Int)
+                val elParams =
+                    apg.generateParameters().getParameterSpec(DHParameterSpec::class.java)
+                val kpg = KeyPairGenerator.getInstance(alg)
+                kpg.initialize(elParams, SecureRandom())
+            }
             alg == "GOST3410" ->
                 initialize(
                     org.bouncycastle.jce.spec.GOST3410ParameterSpec(
@@ -264,9 +326,12 @@ fun genKeyPair(alg: String, params: List<Any> = emptyList()): KeyPair =
     }
 
 fun checkKeyPair(pub: String, pri: String, alg: String = "RSA"): Boolean {
-    val testData = byteArrayOf(67)
+    val testData = "123".toByteArray()
+    println(testData.base64())
     return testData.asymmetricEncrypt(pub.toPublicKey(alg), alg).run {
-        asymmetricDecrypt(pri.toPrivateKey(alg), alg).contentEquals(testData)
+        asymmetricDecrypt(pri.toPrivateKey(alg), alg)
+            .also { println(it.decodeToString()) }
+            .contentEquals(testData)
     }
 }
 

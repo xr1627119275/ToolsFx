@@ -66,12 +66,18 @@ val DEFAULT_MORSE_DECODE =
     mutableMapOf<String, Char>().apply { putAll(DEFAULT_MORSE.values.zip(DEFAULT_MORSE.keys)) }
 
 fun String.morseEncrypt() =
-    uppercase().stripAllSpace().toList().joinToString(" ") {
+    uppercase().stripAllSpace().asIterable().joinToString(" ") {
         DEFAULT_MORSE[it] ?: it.code.toString(2).replace("1", "-").replace("0", ".")
     }
 
-fun String.morseDecrypt() =
-    trim().replace("/", " ").splitBySpace().joinToString("") {
-        DEFAULT_MORSE_DECODE[it]?.toString()
-            ?: it.replace("-", "1").replace(".", "0").toInt(2).toChar().toString()
-    }
+fun String.morseDecrypt(dash: String = "-", dot: String = ".", sep: String = "/") =
+    trim()
+        .replace(dash, "-")
+        .replace(dot, ".")
+        .replace(sep, " ")
+        .splitBySpace()
+        .filterNot { it.isEmpty() }
+        .joinToString("") {
+            DEFAULT_MORSE_DECODE[it]?.toString()
+                ?: it.replace(dash, "1").replace(dot, "0").toInt(2).toChar().toString()
+        }

@@ -62,7 +62,7 @@ val BACON24 =
 
 fun String.baconEncrypt24() =
     uppercase()
-        .toCharArray()
+        .asIterable()
         .map {
             when {
                 it.isUpperCase() -> BACON24[it.code - 65]
@@ -73,7 +73,7 @@ fun String.baconEncrypt24() =
 
 fun String.baconEncrypt26() =
     uppercase()
-        .toCharArray()
+        .asIterable()
         .map {
             when {
                 it.isUpperCase() -> BACON26[it.code - 65]
@@ -94,7 +94,9 @@ fun String.baconDecrypt24(): String {
                     val cc = 'A' + BACON24.indexOf(tmp.toString())
                     sb.append(cc)
                     tmp.clear()
-                } else tmp.append(c)
+                } else {
+                    tmp.append(c)
+                }
             else -> sb.append(c)
         }
     }
@@ -112,7 +114,9 @@ fun String.baconDecrypt26(): String {
                     tmp.append(c)
                     sb.append('A' + BACON26.indexOf(tmp.toString()))
                     tmp.clear()
-                } else tmp.append(c)
+                } else {
+                    tmp.append(c)
+                }
             else -> sb.append(c)
         }
     }
